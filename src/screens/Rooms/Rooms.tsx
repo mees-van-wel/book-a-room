@@ -1,4 +1,4 @@
-import { Button, Loader, Modal, Table } from '@mantine/core';
+import { Button, Group, Loader, Modal, Table, Title } from '@mantine/core';
 import { FC, useState } from 'react';
 
 import COLLECTIONS from '../../enums/COLLECTIONS';
@@ -21,18 +21,21 @@ const Rooms: FC = () => {
 
   return (
     <>
-      <Modal opened={!!room} onClose={closeHandler} title="Room">
+      <Modal opened={!!room} onClose={closeHandler} title="Kamer">
         <Room room={room === true ? undefined : room} closeHandler={closeHandler} />
       </Modal>
 
       <div>
-        <Button onClick={newHandler}>New</Button>
+        <Group>
+          <Title>Kamers</Title>
+          <Button onClick={newHandler}>Nieuw</Button>
+        </Group>
         {rooms && !!rooms.length && (
           <Table highlightOnHover>
             <thead>
               <tr>
-                <th>Name</th>
-                <th>Price per night</th>
+                <th>Naam</th>
+                <th>Prijs per nacht</th>
               </tr>
             </thead>
             <tbody>

@@ -21,7 +21,7 @@ const Bookings: FC = () => {
   const events = useMemo<EventInput[] | undefined>(
     () =>
       bookings?.map((booking) => ({
-        title: `Room: ${booking.room.name}`,
+        title: `Kamer: ${booking.room.name}`,
         start: booking.start.toDate(),
         end: booking.end.toDate(),
         extendedProps: booking,
@@ -47,7 +47,7 @@ const Bookings: FC = () => {
 
   return (
     <>
-      <Modal opened={!!booking} onClose={closeHandler} title="Booking">
+      <Modal opened={!!booking} size="lg" onClose={closeHandler} title="Boeking">
         <Booking booking={booking} closeHandler={closeHandler} />
       </Modal>
 

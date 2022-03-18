@@ -1,5 +1,6 @@
 import '@fullcalendar/react/dist/vdom';
 
+import nlLocale from '@fullcalendar/core/locales/nl';
 import dayGridPlugin from '@fullcalendar/daygrid';
 import interactionPlugin from '@fullcalendar/interaction';
 import FullCalendar, { EventApi, EventInput } from '@fullcalendar/react';
@@ -26,6 +27,7 @@ const Calendar: FC<CalendarProps> = ({ events, onEventClick, onClick }) => {
 
   return (
     <FullCalendar
+      locale={nlLocale}
       height="calc(100% - 16px)"
       plugins={[dayGridPlugin, interactionPlugin]}
       initialView="dayGridMonth"

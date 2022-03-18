@@ -6,10 +6,9 @@ import { useCallback, useEffect } from 'react';
 import { useAuthState } from 'react-firebase-hooks/auth';
 import { useNavigate } from 'react-router-dom';
 
-import ROUTES from '../../enums/ROUTES';
 import Page from '../../layouts/Page';
 import { auth } from '../../lib/firebase';
-import routes from '../../routes';
+import ROUTES from '../../ROUTES';
 
 const Auth = () => {
   const [user, loading] = useAuthState(auth);
@@ -23,7 +22,7 @@ const Auth = () => {
   });
 
   useEffect(() => {
-    if (!loading && !!user) navigate(routes[ROUTES.BOOKINGS].path);
+    if (!loading && !!user) navigate(ROUTES.BOOKINGS.path);
   }, [loading, user]);
 
   const submitHandler = useCallback(async (values) => {
@@ -32,8 +31,8 @@ const Auth = () => {
     } catch (e) {
       notifications.showNotification({
         color: 'red',
-        title: 'Login error',
-        message: 'Invalid email or password',
+        title: 'Inlog fout',
+        message: 'Ongeldig e-mailadres of wachtwoord',
       });
     }
   }, []);
@@ -47,7 +46,7 @@ const Auth = () => {
 
   return (
     <Paper padding="md" shadow="md" radius="md" withBorder>
-      <Title>Login</Title>
+      <Title>Inloggen</Title>
       <form
         onSubmit={form.onSubmit(submitHandler)}
         style={{
@@ -56,23 +55,23 @@ const Auth = () => {
       >
         <TextInput
           required
-          label="Email"
+          label="E-mail"
           type="email"
           name="username"
           id="username"
-          placeholder="your@email.com"
+          placeholder="E-mail"
           {...form.getInputProps('email')}
         />
         <PasswordInput
           required
-          label="Password"
+          label="Wachtwoord"
           name="password"
           id="password"
-          placeholder="Password"
+          placeholder="Wachtwoord"
           {...form.getInputProps('password')}
         />
         <Button type="submit" mt={16}>
-          Login
+          Inloggen
         </Button>
       </form>
     </Paper>

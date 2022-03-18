@@ -8,6 +8,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@fullcalendar/core": "^5.10.1",
     "@fullcalendar/daygrid": "^5.10.1",
     "@fullcalendar/interaction": "^5.10.1",
     "@fullcalendar/react": "^5.10.1",
@@ -18,12 +19,14 @@
     "@react-pdf/renderer": "^2.1.1",
     "dayjs": "^1.10.8",
     "firebase": "^9.6.7",
+    "lodash.isequal": "^4.5.0",
     "react": "^17.0.2",
     "react-dom": "^17.0.2",
     "react-firebase-hooks": "^5.0.3",
     "react-router-dom": "^6.2.1"
   },
   "devDependencies": {
+    "@types/lodash.isequal": "^4.5.5",
     "@types/react": "^17.0.33",
     "@types/react-dom": "^17.0.10",
     "@typescript-eslint/eslint-plugin": "^5.13.0",

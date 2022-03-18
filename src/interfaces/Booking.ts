@@ -11,6 +11,17 @@ export interface BookingInterface extends NewBookingInterface {
   id: string;
   room: RoomInterface;
   notes: string;
+  btw: number;
+  name: string;
+  secondName: string;
+  email: string;
+  phoneNumber: string;
+  street: string;
+  houseNumber: string;
+  postalCode: string;
+  city: string;
+  priceOverride: number;
+  extra: string;
 }
 
 export interface FirestoreBookingInterface {
@@ -18,4 +29,15 @@ export interface FirestoreBookingInterface {
   end: Timestamp;
   room: FireStoreRoomInterface;
   notes: string;
+  btw: number;
+  name: string;
+  secondName: string;
+  email: string;
+  phoneNumber: string;
+  street: string;
+  houseNumber: string;
+  postalCode: string;
+  city: string;
+  priceOverride: number;
+  extra: string;
 }

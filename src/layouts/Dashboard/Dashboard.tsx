@@ -13,16 +13,24 @@ import {
   useMantineTheme,
 } from '@mantine/core';
 import { signOut } from 'firebase/auth';
-import { FC, useEffect, useState } from 'react';
+import { FC, useEffect, useMemo, useState } from 'react';
 import { useAuthState } from 'react-firebase-hooks/auth';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 
-import ROUTES from '../../enums/ROUTES';
+import COLLECTIONS from '../../enums/COLLECTIONS';
+import useFirestoreDocuments from '../../hooks/useFirestoreDocuments';
+import { SettingsInterface } from '../../interfaces/Settings';
 import { auth } from '../../lib/firebase';
-import routes, { routesArray } from '../../routes';
+import { routesArray } from '../../ROUTES';
+import ROUTES from '../../ROUTES';
+import Settings from '../../screens/Settings';
 import Page from '../Page';
 
 const Dashboard: FC = ({ children }) => {
+  const { documents: settingsArray, loading: settingsLoading } =
+    useFirestoreDocuments<SettingsInterface>(COLLECTIONS.SETTINGS, true);
+  const settings = useMemo(() => settingsArray && settingsArray[0], [settingsArray]);
+
   const [user, loading] = useAuthState(auth);
   const [opened, setOpened] = useState(false);
   const { pathname } = useLocation();
@@ -30,13 +38,19 @@ const Dashboard: FC = ({ children }) => {
   const theme = useMantineTheme();
 
   useEffect(() => {
-    if (!loading && !user) navigate(routes[ROUTES.AUTH].path);
+    if (!loading && !user) navigate(ROUTES.AUTH.path);
   }, [loading, user]);
 
   if (loading || (!loading && !user))
     return (
       <Page>
         <Loader />
+      </Page>
+    );
+  else if (!settingsLoading && !settings)
+    return (
+      <Page>
+        <Settings />
       </Page>
     );
 
@@ -59,29 +73,29 @@ const Dashboard: FC = ({ children }) => {
           width={{ sm: 200, lg: 300 }}
         >
           <Group direction="column" spacing="sm">
-            {routesArray.map(({ label, path }) => {
-              if (label)
-                return (
-                  <Anchor
-                    onClick={() => setOpened(false)}
-                    key={path}
-                    component={Link}
-                    to={path}
+            {routesArray
+              .filter((route) => 'label' in route)
+              // @ts-ignore
+              .map(({ label, path }) => (
+                <Anchor
+                  onClick={() => setOpened(false)}
+                  key={path}
+                  component={Link}
+                  to={path}
+                  style={{
+                    width: '100%',
+                  }}
+                >
+                  <Button
                     style={{
                       width: '100%',
                     }}
+                    variant={pathname === path ? 'filled' : 'outline'}
                   >
-                    <Button
-                      style={{
-                        width: '100%',
-                      }}
-                      variant={pathname === path ? 'filled' : 'outline'}
-                    >
-                      {label}
-                    </Button>
-                  </Anchor>
-                );
-            })}
+                    {label}
+                  </Button>
+                </Anchor>
+              ))}
             <Button
               style={{
                 width: '100%',
@@ -90,7 +104,7 @@ const Dashboard: FC = ({ children }) => {
               color="red"
               onClick={() => signOut(auth)}
             >
-              Logout
+              Uitloggen
             </Button>
           </Group>
         </Navbar>

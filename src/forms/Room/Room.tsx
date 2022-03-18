@@ -40,25 +40,25 @@ const Room: FC<RoomProps> = ({ room, closeHandler }) => {
     <form onSubmit={form.onSubmit(submitHandler)}>
       <TextInput
         required
-        label="Name"
-        placeholder="Name"
+        label="Naam"
+        placeholder="Naam"
         {...form.getInputProps('name')}
       />
       <NumberInput
+        required
         min={0}
         noClampOnBlur
         decimalSeparator=","
-        required
         icon="€"
-        label="Price per night"
-        placeholder="Price per night"
+        label="Prijs per nacht"
+        placeholder="Prijs per nacht"
         {...form.getInputProps('price')}
       />
       <Group mt={16}>
-        <Button type="submit">Save</Button>
+        <Button type="submit">Opslaan</Button>
         {!!room?.id && (
           <Button color="red" onClick={deleteHandler}>
-            Delete
+            Verwijderen
           </Button>
         )}
       </Group>
