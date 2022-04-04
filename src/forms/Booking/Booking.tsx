@@ -1,12 +1,15 @@
+import 'dayjs/locale/nl';
+
 import {
   Button,
   Group,
   NumberInput,
+  ScrollArea,
   Select,
+  Stepper,
   Table,
   Textarea,
   TextInput,
-  Title,
 } from '@mantine/core';
 import { DateRangePicker } from '@mantine/dates';
 import { useForm } from '@mantine/hooks';
@@ -14,13 +17,15 @@ import pdf from '@react-pdf/renderer';
 import dayjs from 'dayjs';
 import firebase from 'firebase/compat';
 import { addDoc, collection, deleteDoc, doc, setDoc } from 'firebase/firestore';
-import { FC, useCallback, useEffect, useMemo } from 'react';
+import { FC, useCallback, useEffect, useMemo, useState } from 'react';
 
 import COLLECTIONS from '../../enums/COLLECTIONS';
 import useFirestoreDocuments from '../../hooks/useFirestoreDocuments';
 import { BookingInterface, NewBookingInterface } from '../../interfaces/Booking';
 import { firestore } from '../../lib/firebase';
 import Timestamp = firebase.firestore.Timestamp;
+import { useNotifications } from '@mantine/notifications';
+
 import { FireStoreRoomInterface } from '../../interfaces/Room';
 import { SettingsInterface } from '../../interfaces/Settings';
 import currency from '../../utils/currency';
@@ -65,7 +70,14 @@ const Receipt = ({
   totalWithoutVat,
   vat,
   vatPercentage,
+  cleaningFee,
+  cleaningFeeVat,
+  cleaningFeeVatPercentage,
+  totalNights,
+  totalCleaningFee,
   total,
+  totalMinusVat,
+  totalVat,
 }: {
   room: FireStoreRoomInterface;
   booking: FormData;
@@ -75,7 +87,14 @@ const Receipt = ({
   totalWithoutVat: number;
   vat: number;
   vatPercentage: number;
+  cleaningFee: number;
+  cleaningFeeVat: number;
+  cleaningFeeVatPercentage: number;
+  totalNights: number;
+  totalCleaningFee: number;
   total: number;
+  totalMinusVat: number;
+  totalVat: number;
 }) => (
   <Document>
     <Page size="A4" style={styles.page}>
@@ -118,32 +137,50 @@ const Receipt = ({
       </View>
       <View style={styles.table}>
         <View>
-          <Text style={styles.header}>Kamer</Text>
+          <Text style={styles.header}>Dienst</Text>
           <Text>{room.name}</Text>
+          {cleaningFee ? <Text>Schoonmaakkosten</Text> : <Text />}
         </View>
         <View>
-          <Text style={styles.header}>Prijs per nacht</Text>
+          <Text style={styles.header}>Prijs per stuk</Text>
           <Text>{currency(pricePerNight)}</Text>
+          {cleaningFee ? <Text>{currency(cleaningFee)}</Text> : <Text />}
         </View>
         <View>
-          <Text style={styles.header}>Nachten</Text>
+          <Text style={styles.header}>Aantal</Text>
           <Text>{`${nights} (${booking.date?.[0].toLocaleDateString(
             'nl-NL',
           )} - ${booking.date?.[1].toLocaleDateString('nl-NL')})`}</Text>
+          {cleaningFee ? <Text>1</Text> : <Text />}
         </View>
         <View>
           <Text style={styles.header}>Totaal excl. Btw</Text>
           <Text>{currency(totalWithoutVat)}</Text>
+          {cleaningFee ? <Text>{currency(cleaningFee)}</Text> : <Text />}
         </View>
         <View>
           <Text style={styles.header}>BTW</Text>
-          <Text>{`${currency(vat)} (${vatPercentage}%)`}</Text>
+          <Text>{`${currency(vat)} (${vatPercentage}%${
+            vatPercentage == 0 ? ' / Verlegd' : ''
+          })`}</Text>
+          {cleaningFee ? (
+            <Text>{`${currency(cleaningFeeVat)} (${cleaningFeeVatPercentage}%${
+              cleaningFeeVatPercentage == 0 ? ' / Verlegd' : ''
+            })`}</Text>
+          ) : (
+            <Text />
+          )}
         </View>
         <View>
-          <Text style={styles.header}>Total</Text>
-          <Text>{currency(total)}</Text>
+          <Text style={styles.header}>Totaal</Text>
+          <Text>{currency(totalNights)}</Text>
+          {cleaningFee ? <Text>{currency(totalCleaningFee)}</Text> : <Text />}
         </View>
       </View>
+      <View style={styles.spacer} />
+      <Text>Totaal excl. Btw: {currency(totalMinusVat)}</Text>
+      <Text>Totaal Btw: {currency(totalVat)}</Text>
+      <Text>Totaal: {currency(total)}</Text>
     </Page>
   </Document>
 );
@@ -156,8 +193,10 @@ interface BookingProps {
 interface FormData {
   date: [Date, Date] | null;
   room: string | null;
-  notes: string;
   btw: number;
+  cleaningFee: number;
+  cleaningFeeVat: number;
+  notes: string;
   name: string;
   secondName: string | null;
   email: string;
@@ -171,23 +210,31 @@ interface FormData {
 }
 
 const Booking: FC<BookingProps> = ({ booking, closeHandler }) => {
+  const isBookingCreated = useMemo(() => booking && 'id' in booking, [booking]);
+  const [active, setActive] = useState(isBookingCreated ? 2 : 0);
+  const nextStep = () => setActive((current) => current + 1);
+  const prevStep = () => setActive((current) => current - 1);
   const { documents: settingsArray } = useFirestoreDocuments<SettingsInterface>(
     COLLECTIONS.SETTINGS,
   );
 
   const settings = useMemo(() => settingsArray && settingsArray[0], [settingsArray]);
+  const notifications = useNotifications();
 
   const { documents: rooms } = useFirestoreDocuments<FireStoreRoomInterface>(
     COLLECTIONS.ROOMS,
   );
 
   const form = useForm<FormData>({
+    // @ts-ignore
     initialValues: booking
       ? {
           date: [booking.start, booking.end],
           room: 'room' in booking ? JSON.stringify(booking.room) : null,
-          notes: 'notes' in booking ? booking.notes : '',
           btw: 'btw' in booking ? booking.btw : 9,
+          cleaningFee: 'cleaningFee' in booking ? booking.cleaningFee : null,
+          cleaningFeeVat: 'cleaningFeeVat' in booking ? booking.cleaningFeeVat : 21,
+          notes: 'notes' in booking ? booking.notes : '',
           name: 'name' in booking ? booking.name : '',
           secondName: 'secondName' in booking ? booking.secondName : null,
           email: 'email' in booking ? booking.email : '',
@@ -205,8 +252,10 @@ const Booking: FC<BookingProps> = ({ booking, closeHandler }) => {
       : {
           date: null,
           room: null,
-          notes: '',
           btw: 9,
+          cleaningFee: null,
+          cleaningFeeVat: 21,
+          notes: '',
           name: '',
           secondName: null,
           email: '',
@@ -222,10 +271,7 @@ const Booking: FC<BookingProps> = ({ booking, closeHandler }) => {
 
   const submitHandler = useCallback(
     async (values: FormData) => {
-      const { date, room, priceOverride } = values;
-
-      // @ts-ignore
-      delete values.date;
+      const { date, room, priceOverride, cleaningFee } = values;
 
       const bookingToSend = {
         ...values,
@@ -233,13 +279,19 @@ const Booking: FC<BookingProps> = ({ booking, closeHandler }) => {
         end: date?.[1] && Timestamp.fromDate(date[1]),
         room: room ? JSON.parse(room) : booking && 'room' in booking && booking.room,
         priceOverride: priceOverride ?? 0,
+        cleaningFee: cleaningFee ?? 0,
       };
 
       if (booking && 'id' in booking)
         await setDoc(doc(firestore, 'bookings', booking.id), bookingToSend);
       else await addDoc(collection(firestore, 'bookings'), bookingToSend);
 
-      closeHandler();
+      isBookingCreated ? setActive(2) : closeHandler();
+
+      notifications.showNotification({
+        color: 'green',
+        message: 'Opgeslagen',
+      });
     },
     [booking, closeHandler],
   );
@@ -300,180 +352,287 @@ const Booking: FC<BookingProps> = ({ booking, closeHandler }) => {
     [totalWithoutVat, form.values.btw],
   );
 
-  const total = useMemo(() => totalWithoutVat + vat, [totalWithoutVat, vat]);
+  const totalNights = useMemo(() => totalWithoutVat + vat, [totalWithoutVat, vat]);
+
+  const cleaningFeeVat = useMemo(
+    () => Math.round(form.values.cleaningFee * form.values.cleaningFeeVat) / 100,
+    [form.values.cleaningFee, form.values.cleaningFeeVat],
+  );
+
+  const totalCleaningFee = useMemo(
+    () => form.values.cleaningFee + cleaningFeeVat,
+    [form.values.cleaningFee, totalWithoutVat, vat],
+  );
+
+  const total = useMemo(
+    () => (form.values.cleaningFee ? totalNights + totalCleaningFee : totalNights),
+    [totalNights, totalCleaningFee],
+  );
 
   return (
     <form onSubmit={form.onSubmit(submitHandler)}>
-      <DateRangePicker
-        required
-        label="Datum"
-        placeholder="Datum"
-        {...form.getInputProps('date')}
-      />
-      <Select
-        required={!(booking && 'room' in booking)}
-        label="Kamer"
-        placeholder="Kamer"
-        searchable
-        data={roomSelectData ?? []}
-        {...form.getInputProps('room')}
-      />
-      <Select
-        required
-        label="Btw percentage"
-        placeholder="Btw percentage"
-        defaultValue="9"
-        data={[
-          {
-            label: '0%',
-            value: '0',
-          },
-          {
-            label: '9%',
-            value: '9',
-          },
-          {
-            label: '21%',
-            value: '21',
-          },
-        ]}
-        {...form.getInputProps('btw')}
-      />
-      <Textarea
-        label="Opmerkingen"
-        placeholder="Opmerkingen"
-        {...form.getInputProps('notes')}
-      />
-      <Title order={2}>Klantgegevens</Title>
-      <Group grow>
-        <TextInput
-          required
-          label="Naam"
-          placeholder="Naam"
-          {...form.getInputProps('name')}
-        />
-        <TextInput
-          label="Tweede naam"
-          placeholder="Tweede naam"
-          {...form.getInputProps('secondName')}
-        />
-      </Group>
-      <Group grow>
-        <TextInput
-          required
-          type="email"
-          label="E-mail"
-          placeholder="E-mail"
-          {...form.getInputProps('email')}
-        />
-        <TextInput
-          required
-          type="tel"
-          label="Telefoonnummer"
-          placeholder="Telefoonnummer"
-          {...form.getInputProps('phoneNumber')}
-        />
-      </Group>
-      <Group grow>
-        <TextInput
-          required
-          label="Straat"
-          placeholder="Straat"
-          {...form.getInputProps('street')}
-        />
-        <TextInput
-          required
-          label="Huisnummer"
-          placeholder="Huisnummer"
-          {...form.getInputProps('houseNumber')}
-        />
-      </Group>
-      <Group grow>
-        <TextInput
-          required
-          label="Postcode"
-          placeholder="Postcode"
-          {...form.getInputProps('postalCode')}
-        />
-        <TextInput
-          required
-          label="Plaats"
-          placeholder="Plaats"
-          {...form.getInputProps('city')}
-        />
-      </Group>
-      <Group grow>
-        <NumberInput
-          min={0}
-          noClampOnBlur
-          decimalSeparator=","
-          icon="€"
-          label="Aangepaste prijs"
-          placeholder="Prijs per nacht"
-          {...form.getInputProps('priceOverride')}
-        />
-        <TextInput label="Extra" placeholder="Extra" {...form.getInputProps('extra')} />
-      </Group>
+      <Stepper active={active} onStepClick={setActive} breakpoint="sm">
+        <Stepper.Step label="Details" allowStepSelect={false}>
+          <DateRangePicker
+            required
+            label="Datum"
+            locale="nl"
+            placeholder="Datum"
+            {...form.getInputProps('date')}
+          />
+          <Select
+            required={!(booking && 'room' in booking)}
+            label="Kamer"
+            placeholder="Kamer"
+            searchable
+            data={roomSelectData ?? []}
+            {...form.getInputProps('room')}
+          />
+          <Select
+            required
+            label="Btw percentage"
+            placeholder="Btw percentage"
+            defaultValue="9"
+            data={[
+              {
+                label: '0% / Verlegd',
+                value: '0',
+              },
+              {
+                label: '9%',
+                value: '9',
+              },
+              {
+                label: '21%',
+                value: '21',
+              },
+            ]}
+            {...form.getInputProps('btw')}
+          />
+          <NumberInput
+            min={0}
+            noClampOnBlur
+            decimalSeparator=","
+            icon="€"
+            label="Schoonmaakkosten"
+            placeholder="Schoonmaakkosten"
+            {...form.getInputProps('cleaningFee')}
+          />
+          {form.values.cleaningFee && (
+            <Select
+              label="Schoonmaakkosten Btw percentage"
+              placeholder="Schoonmaakkosten Btw percentage"
+              defaultValue="21"
+              data={[
+                {
+                  label: '0% / Verlegd',
+                  value: '0',
+                },
+                {
+                  label: '21%',
+                  value: '21',
+                },
+              ]}
+              {...form.getInputProps('cleaningFeeVat')}
+            />
+          )}
+          <Textarea
+            label="Opmerkingen"
+            placeholder="Opmerkingen"
+            {...form.getInputProps('notes')}
+          />
+        </Stepper.Step>
+        <Stepper.Step label="Klantgegevens" allowStepSelect={false}>
+          <Group grow>
+            <TextInput
+              required
+              label="Naam"
+              placeholder="Naam"
+              {...form.getInputProps('name')}
+            />
+            <TextInput
+              label="Tweede naam"
+              placeholder="Tweede naam"
+              {...form.getInputProps('secondName')}
+            />
+          </Group>
+          <Group grow>
+            <TextInput
+              required
+              type="email"
+              label="E-mail"
+              placeholder="E-mail"
+              {...form.getInputProps('email')}
+            />
+            <TextInput
+              required
+              type="tel"
+              label="Telefoonnummer"
+              placeholder="Telefoonnummer"
+              {...form.getInputProps('phoneNumber')}
+            />
+          </Group>
+          <Group grow>
+            <TextInput
+              required
+              label="Straat"
+              placeholder="Straat"
+              {...form.getInputProps('street')}
+            />
+            <TextInput
+              required
+              label="Huisnummer"
+              placeholder="Huisnummer"
+              {...form.getInputProps('houseNumber')}
+            />
+          </Group>
+          <Group grow>
+            <TextInput
+              required
+              label="Postcode"
+              placeholder="Postcode"
+              {...form.getInputProps('postalCode')}
+            />
+            <TextInput
+              required
+              label="Plaats"
+              placeholder="Plaats"
+              {...form.getInputProps('city')}
+            />
+          </Group>
+          <Group grow>
+            <NumberInput
+              min={0}
+              noClampOnBlur
+              decimalSeparator=","
+              icon="€"
+              label="Aangepaste prijs"
+              placeholder="Prijs per nacht"
+              {...form.getInputProps('priceOverride')}
+            />
+            <TextInput
+              label="Extra"
+              placeholder="Extra"
+              {...form.getInputProps('extra')}
+            />
+          </Group>
+        </Stepper.Step>
+        {booking &&
+          'id' in booking &&
+          form.values.date &&
+          settings &&
+          !!form.values.date[0] &&
+          !!form.values.date[1] && (
+            <Stepper.Step label="Bon" allowStepSelect={false}>
+              <ScrollArea
+                style={{
+                  maxWidth: '75vw',
+                }}
+              >
+                <Table
+                  style={{
+                    minWidth: 600,
+                  }}
+                >
+                  <thead>
+                    <tr>
+                      <th>Dienst</th>
+                      <th>Prijs per stuk</th>
+                      <th>Aantal</th>
+                      <th>Totaal excl. Btw</th>
+                      <th>BTW</th>
+                      <th>Totaal</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td>{room.name}</td>
+                      <td>{currency(pricePerNight)}</td>
+                      <td>{nights}</td>
+                      <td>{currency(totalWithoutVat)}</td>
+                      <td>{`${currency(vat)} (${form.values.btw}%${
+                        form.values.btw == 0 ? ' / Verlegd' : ''
+                      })`}</td>
+                      <td>{currency(totalNights)}</td>
+                    </tr>
+                    {form.values.cleaningFee && (
+                      <tr>
+                        <td>Schoonmaakkosten</td>
+                        <td>{currency(form.values.cleaningFee)}</td>
+                        <td>1</td>
+                        <td>{currency(form.values.cleaningFee)}</td>
+                        <td>{`${currency(cleaningFeeVat)} (${
+                          form.values.cleaningFeeVat
+                        }%${form.values.cleaningFeeVat == 0 ? ' / Verlegd' : ''})`}</td>
+                        <td>{currency(form.values.cleaningFee + cleaningFeeVat)}</td>
+                      </tr>
+                    )}
+                  </tbody>
+                </Table>
+              </ScrollArea>
+              <p>{`Totaal: ${currency(total)}`}</p>
+
+              <PDFDownloadLink
+                document={
+                  <Receipt
+                    settings={settings}
+                    booking={form.values}
+                    room={room}
+                    nights={nights}
+                    pricePerNight={pricePerNight}
+                    totalWithoutVat={totalWithoutVat}
+                    vat={vat}
+                    vatPercentage={form.values.btw}
+                    totalNights={totalNights}
+                    cleaningFee={form.values.cleaningFee}
+                    cleaningFeeVat={cleaningFeeVat}
+                    cleaningFeeVatPercentage={form.values.cleaningFeeVat}
+                    totalCleaningFee={totalCleaningFee}
+                    total={total}
+                    totalMinusVat={
+                      form.values.cleaningFee
+                        ? totalWithoutVat + form.values.cleaningFee
+                        : totalWithoutVat
+                    }
+                    totalVat={form.values.cleaningFee ? vat + cleaningFeeVat : vat}
+                  />
+                }
+                fileName={`Bon (${form.values.date[0].toLocaleDateString(
+                  'nl-NL',
+                )} - ${form.values.date[1].toLocaleDateString('nl-NL')})`}
+              >
+                <Button>Download PDF</Button>
+              </PDFDownloadLink>
+            </Stepper.Step>
+          )}
+      </Stepper>
       <Group mt={16}>
-        <Button type="submit">Opslaan</Button>
-        {booking && 'id' in booking && (
+        {active > 0 && (
+          <Button onClick={prevStep} variant="outline">
+            Vorige
+          </Button>
+        )}
+        {isBookingCreated
+          ? active !== 2 && (
+              <Button onClick={nextStep} variant="outline">
+                Volgende
+              </Button>
+            )
+          : active === 0 &&
+            form.values.room && (
+              <Button onClick={nextStep} variant="outline">
+                Volgende
+              </Button>
+            )}
+        {isBookingCreated
+          ? active !== 2 && <Button type="submit">Opslaan</Button>
+          : active === 1 && <Button type="submit">Opslaan</Button>}
+        {isBookingCreated && (
           <Button color="red" onClick={deleteHandler}>
             Verwijderen
           </Button>
         )}
       </Group>
-      {booking &&
-        'id' in booking &&
-        form.values.date &&
-        settings &&
-        !!form.values.date[0] &&
-        !!form.values.date[1] && (
-          <div>
-            <Title my={16} order={2}>
-              Bon
-            </Title>
-            <Table>
-              <thead>
-                <tr>
-                  <th>Kamer</th>
-                  <th>Prijs per nacht</th>
-                  <th>Nachten</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <td>{room.name}</td>
-                  <td>{currency(pricePerNight)}</td>
-                  <td>{nights}</td>
-                </tr>
-              </tbody>
-            </Table>
-            <p>{`Totaal excl. Btw: ${currency(totalWithoutVat)}`}</p>
-            <p>{`BTW: ${currency(vat)} (${form.values.btw}%)`}</p>
-            <p>{`Totaal: ${currency(total)}`}</p>
-
-            <PDFDownloadLink
-              document={
-                <Receipt
-                  settings={settings}
-                  booking={form.values}
-                  room={room}
-                  nights={nights}
-                  pricePerNight={pricePerNight}
-                  totalWithoutVat={totalWithoutVat}
-                  vat={vat}
-                  vatPercentage={form.values.btw}
-                  total={total}
-                />
-              }
-              fileName={`Bon (${form.values.date[0].toLocaleDateString(
-                'nl-NL',
-              )} - ${form.values.date[1].toLocaleDateString('nl-NL')})`}
-            >
-              <Button>Download PDF</Button>
-            </PDFDownloadLink>
-          </div>
-        )}
     </form>
   );
 };

@@ -66,7 +66,6 @@ const Setting: FC<FormProps> = ({ settings }) => {
             {...form.getInputProps('email')}
           />
           <TextInput
-            required
             label="Telefoonnummer"
             type="tel"
             placeholder="Telefoonnummer"

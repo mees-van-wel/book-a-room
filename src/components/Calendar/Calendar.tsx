@@ -4,6 +4,7 @@ import nlLocale from '@fullcalendar/core/locales/nl';
 import dayGridPlugin from '@fullcalendar/daygrid';
 import interactionPlugin from '@fullcalendar/interaction';
 import FullCalendar, { EventApi, EventInput } from '@fullcalendar/react';
+import dayjs from 'dayjs';
 import { FC, useMemo } from 'react';
 
 interface CalendarProps {
@@ -39,10 +40,14 @@ const Calendar: FC<CalendarProps> = ({ events, onEventClick, onClick }) => {
       selectable
       nowIndicator
       select={({ start, end }) => {
-        const now = new Date();
-        start.setHours(now.getHours());
-        end.setDate(end.getDate() - 1);
-        end.setHours(now.getHours() + 1);
+        start.setHours(12);
+        end.setHours(12);
+
+        const dayStart = dayjs(start);
+        const dayEnd = dayjs(end);
+
+        if (dayEnd.diff(dayStart, 'days') > 1) end.setDate(end.getDate() - 1);
+
         if (onClick) onClick(new Date(start), new Date(end));
       }}
     />

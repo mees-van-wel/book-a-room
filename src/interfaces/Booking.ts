@@ -12,6 +12,8 @@ export interface BookingInterface extends NewBookingInterface {
   room: RoomInterface;
   notes: string;
   btw: number;
+  cleaningFee: number;
+  cleaningFeeVat: number;
   name: string;
   secondName: string;
   email: string;
@@ -30,6 +32,8 @@ export interface FirestoreBookingInterface {
   room: FireStoreRoomInterface;
   notes: string;
   btw: number;
+  cleaningFee: number;
+  cleaningFeeVat: number;
   name: string;
   secondName: string;
   email: string;

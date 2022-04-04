@@ -2,6 +2,7 @@ import { EventInput } from '@fullcalendar/common';
 import { EventApi } from '@fullcalendar/react';
 import { Loader, Modal } from '@mantine/core';
 import { FC, useMemo, useState } from 'react';
+import stc from 'string-to-color';
 
 import Calendar from '../../components/Calendar';
 import COLLECTIONS from '../../enums/COLLECTIONS';
@@ -21,10 +22,13 @@ const Bookings: FC = () => {
   const events = useMemo<EventInput[] | undefined>(
     () =>
       bookings?.map((booking) => ({
-        title: `Kamer: ${booking.room.name}`,
+        title: `${booking.name} @ ${booking.room.name}`,
         start: booking.start.toDate(),
         end: booking.end.toDate(),
         extendedProps: booking,
+        borderColor: stc(booking.room.name),
+        backgroundColor: 'black',
+        textColor: 'white',
       })),
     [bookings],
   );
@@ -47,7 +51,7 @@ const Bookings: FC = () => {
 
   return (
     <>
-      <Modal opened={!!booking} size="lg" onClose={closeHandler} title="Boeking">
+      <Modal opened={!!booking} size="lx" onClose={closeHandler} title="Boeking">
         <Booking booking={booking} closeHandler={closeHandler} />
       </Modal>
 
