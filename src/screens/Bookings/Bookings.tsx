@@ -22,7 +22,8 @@ const Bookings: FC = () => {
   const events = useMemo<EventInput[] | undefined>(
     () =>
       bookings?.map((booking) => ({
-        title: `${booking.name} @ ${booking.room.name}`,
+        roomName: booking.room.name,
+        title: booking.customer.name,
         start: booking.start.toDate(),
         end: booking.end.toDate(),
         extendedProps: booking,

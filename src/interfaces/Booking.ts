@@ -1,5 +1,6 @@
 import firebase from 'firebase/compat';
 import Timestamp = firebase.firestore.Timestamp;
+import { CustomerInterface } from './Customer';
 import { FireStoreRoomInterface, RoomInterface } from './Room';
 
 export interface NewBookingInterface {
@@ -14,16 +15,12 @@ export interface BookingInterface extends NewBookingInterface {
   btw: number;
   cleaningFee: number;
   cleaningFeeVat: number;
-  name: string;
-  secondName: string;
-  email: string;
-  phoneNumber: string;
-  street: string;
-  houseNumber: string;
-  postalCode: string;
-  city: string;
+  parkingFee: number;
+  parkingFeeVat: number;
+  customer: CustomerInterface;
   priceOverride: number;
-  extra: string;
+  invoiceNumber: string;
+  invoiceDate: string;
 }
 
 export interface FirestoreBookingInterface {
@@ -34,14 +31,10 @@ export interface FirestoreBookingInterface {
   btw: number;
   cleaningFee: number;
   cleaningFeeVat: number;
-  name: string;
-  secondName: string;
-  email: string;
-  phoneNumber: string;
-  street: string;
-  houseNumber: string;
-  postalCode: string;
-  city: string;
+  parkingFee: number;
+  parkingFeeVat: number;
+  customer: CustomerInterface;
   priceOverride: number;
-  extra: string;
+  invoiceNumber: string;
+  invoiceDate: Timestamp;
 }

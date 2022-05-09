@@ -1,5 +1,6 @@
 export interface SettingsInterface {
   id: string;
+  invoices?: number;
   companyName: string;
   email: string;
   phoneNumber: string;

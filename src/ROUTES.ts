@@ -2,6 +2,7 @@ import Dashboard from './layouts/Dashboard';
 import Page from './layouts/Page';
 import Auth from './screens/Auth';
 import Bookings from './screens/Bookings';
+import Customers from './screens/Customers/Customers';
 import NotFoundError from './screens/NotFoundError';
 import Rooms from './screens/Rooms';
 import Settings from './screens/Settings';
@@ -17,6 +18,12 @@ const ROUTES = {
     path: '/rooms',
     label: 'Kamers',
     element: Rooms,
+    layout: Dashboard,
+  },
+  CUSTOMERS: {
+    path: '/customers',
+    label: 'Klanten',
+    element: Customers,
     layout: Dashboard,
   },
   SETTINGS: {
