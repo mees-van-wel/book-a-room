@@ -43,20 +43,22 @@ const Customers: FC = () => {
               </tr>
             </thead>
             <tbody>
-              {customers.map((customer) => (
-                <tr
-                  onClick={() => setCustomer(customer)}
-                  key={customer.name}
-                  style={{
-                    cursor: 'pointer',
-                  }}
-                >
-                  <td>{customer.name}</td>
-                  <td>{customer.email}</td>
-                  <td>{customer.phoneNumber}</td>
-                  <td>{`${customer.street} ${customer.houseNumber}, ${customer.postalCode} ${customer.city}`}</td>
-                </tr>
-              ))}
+              {customers
+                .sort((a, b) => (a.name > b.name ? 1 : b.name > a.name ? -1 : 0))
+                .map((customer) => (
+                  <tr
+                    onClick={() => setCustomer(customer)}
+                    key={customer.name}
+                    style={{
+                      cursor: 'pointer',
+                    }}
+                  >
+                    <td>{customer.name}</td>
+                    <td>{customer.email}</td>
+                    <td>{customer.phoneNumber}</td>
+                    <td>{`${customer.street} ${customer.houseNumber}, ${customer.postalCode} ${customer.city}`}</td>
+                  </tr>
+                ))}
             </tbody>
           </Table>
         )}

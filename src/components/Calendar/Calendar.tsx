@@ -118,7 +118,7 @@ const Calendar: FC<CalendarProps> = ({ events, onEventClick, onClick }) => {
             </th>
           ))}
         </tr>
-        {rooms.map((room) => (
+        {rooms.sort().map((room) => (
           <tr
             key={room}
             style={{

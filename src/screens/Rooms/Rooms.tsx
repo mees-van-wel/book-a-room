@@ -39,18 +39,20 @@ const Rooms: FC = () => {
               </tr>
             </thead>
             <tbody>
-              {rooms.map((room) => (
-                <tr
-                  onClick={() => setRoom(room)}
-                  key={room.name}
-                  style={{
-                    cursor: 'pointer',
-                  }}
-                >
-                  <td>{room.name}</td>
-                  <td>{currency(room.price)}</td>
-                </tr>
-              ))}
+              {rooms
+                .sort((a, b) => (a.name > b.name ? 1 : b.name > a.name ? -1 : 0))
+                .map((room) => (
+                  <tr
+                    onClick={() => setRoom(room)}
+                    key={room.name}
+                    style={{
+                      cursor: 'pointer',
+                    }}
+                  >
+                    <td>{room.name}</td>
+                    <td>{currency(room.price)}</td>
+                  </tr>
+                ))}
             </tbody>
           </Table>
         )}

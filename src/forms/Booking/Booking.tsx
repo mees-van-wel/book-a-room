@@ -117,10 +117,8 @@ const Receipt = ({
         <Image src={Logo} style={styles.image} />
         <View style={styles.container}>
           <View style={styles.settingsContainer}>
-            <Text>Factuurnummer: {booking.invoiceNumber}</Text>
-            <Text>
-              Datum: {booking.invoiceDate?.toDate().toLocaleDateString('nl-NL')}
-            </Text>
+            <Text>Invoice number: {booking.invoiceNumber}</Text>
+            <Text>Date: {booking.invoiceDate?.toDate().toLocaleDateString('nl-NL')}</Text>
             <View style={styles.line} />
             <Text>{settings.companyName}</Text>
             <Text>
@@ -130,11 +128,11 @@ const Receipt = ({
               {settings.postalCode} {settings.city}
             </Text>
             <View style={styles.spacer} />
-            <Text>E-mail: {settings.email}</Text>
-            <Text>Telefoonnummer: {settings.phoneNumber}</Text>
+            <Text>Email: {settings.email}</Text>
+            <Text>Telephone number: {settings.phoneNumber}</Text>
             <View style={styles.spacer} />
-            <Text>KvK-nummer: {settings.kvkNumber}</Text>
-            <Text>Btw-nummer: {settings.btwNumber}</Text>
+            <Text>Chamber of Commerce number: {settings.kvkNumber}</Text>
+            <Text>VAT number: {settings.btwNumber}</Text>
             <View style={styles.spacer} />
             <Text>Swift (BIC) code: {settings.bicCode}</Text>
             <Text>IBAN: {settings.iban}</Text>
@@ -149,27 +147,27 @@ const Receipt = ({
               {booking.customer.postalCode} {booking.customer.city}
             </Text>
             <View style={styles.spacer} />
-            <Text>E-mail: {booking.customer.email}</Text>
-            <Text>Telefoonnummer: {booking.customer.phoneNumber}</Text>
+            <Text>Email: {booking.customer.email}</Text>
+            <Text>Telephone number: {booking.customer.phoneNumber}</Text>
             <View style={styles.spacer} />
             <Text>{booking.customer.extra}</Text>
             <View style={styles.spacer} />
           </View>
           <View style={styles.table}>
             <View>
-              <Text style={styles.header}>Dienst</Text>
+              <Text style={styles.header}>Service</Text>
               <Text>{room.name}</Text>
               {cleaningFee ? <Text>Schoonmaakkosten</Text> : <Text />}
               {parkingFee ? <Text>Parkeerkosten</Text> : <Text />}
             </View>
             <View>
-              <Text style={styles.header}>Prijs per stuk</Text>
+              <Text style={styles.header}>Unit price</Text>
               <Text>{currency(pricePerNight)}</Text>
               {cleaningFee ? <Text>{currency(cleaningFee)}</Text> : <Text />}
               {parkingFee ? <Text>{currency(parkingFee)}</Text> : <Text />}
             </View>
             <View>
-              <Text style={styles.header}>Aantal</Text>
+              <Text style={styles.header}>Amount</Text>
               <Text>{`${nights} (${booking.date?.[0].toLocaleDateString(
                 'nl-NL',
               )} - ${booking.date?.[1].toLocaleDateString('nl-NL')})`}</Text>
@@ -177,13 +175,13 @@ const Receipt = ({
               {parkingFee ? <Text>1</Text> : <Text />}
             </View>
             <View>
-              <Text style={styles.header}>Totaal excl. Btw</Text>
+              <Text style={styles.header}>Total excluding VAT</Text>
               <Text>{currency(totalWithoutVat)}</Text>
               {cleaningFee ? <Text>{currency(cleaningFee)}</Text> : <Text />}
               {parkingFee ? <Text>{currency(parkingFee)}</Text> : <Text />}
             </View>
             <View>
-              <Text style={styles.header}>BTW</Text>
+              <Text style={styles.header}>VAT</Text>
               <Text>{`${currency(vat)} (${vatPercentage}%${
                 vatPercentage == 0 ? ' / Verlegd' : ''
               })`}</Text>
@@ -203,21 +201,19 @@ const Receipt = ({
               )}
             </View>
             <View>
-              <Text style={styles.header}>Totaal</Text>
+              <Text style={styles.header}>Total</Text>
               <Text>{currency(totalNights)}</Text>
               {cleaningFee ? <Text>{currency(totalCleaningFee)}</Text> : <Text />}
               {parkingFee ? <Text>{currency(totalParkingFee)}</Text> : <Text />}
             </View>
           </View>
           <View style={styles.spacer} />
-          <Text>Totaal excl. Btw: {currency(totalMinusVat)}</Text>
-          <Text>Totaal Btw: {currency(totalVat)}</Text>
-          <Text>Totaal: {currency(total)}</Text>
+          <Text>Total excluding VAT: {currency(totalMinusVat)}</Text>
+          <Text>Total VAT: {currency(totalVat)}</Text>
+          <Text>Total: {currency(total)}</Text>
           <View style={styles.spacer} />
           <View style={styles.spacer} />
-          <Text>
-            Wij verzoeken u vriendelijk het bedrag binnen 14 dagen over te maken.
-          </Text>
+          <Text>We kindly request that you transfer the amount due within 14 days.</Text>
         </View>
       </Page>
     </Document>
@@ -673,6 +669,9 @@ const Booking: FC<BookingProps> = ({ booking, closeHandler }) => {
               >
                 <Button>Download PDF</Button>
               </PDFDownloadLink>
+              <br />
+              <br />
+              {form.values.notes && <Text>Opmerkingen: {form.values.notes}</Text>}
             </Stepper.Step>
           )}
       </Stepper>

@@ -3,6 +3,7 @@ import {
   AppShell,
   Burger,
   Button,
+  ColorScheme,
   Group,
   Header,
   Loader,
@@ -12,6 +13,7 @@ import {
   Title,
   useMantineTheme,
 } from '@mantine/core';
+import { useLocalStorage } from '@mantine/hooks';
 import { signOut } from 'firebase/auth';
 import { FC, useEffect, useMemo, useState } from 'react';
 import { useAuthState } from 'react-firebase-hooks/auth';
@@ -30,6 +32,9 @@ const Dashboard: FC = ({ children }) => {
   const { documents: settingsArray, loading: settingsLoading } =
     useFirestoreDocuments<SettingsInterface>(COLLECTIONS.SETTINGS, true);
   const settings = useMemo(() => settingsArray && settingsArray[0], [settingsArray]);
+  const [colorScheme, setColorScheme] = useLocalStorage<ColorScheme>({
+    key: 'color-scheme',
+  });
 
   const [user, loading] = useAuthState(auth);
   const [opened, setOpened] = useState(false);
@@ -57,9 +62,8 @@ const Dashboard: FC = ({ children }) => {
   return (
     <AppShell
       navbarOffsetBreakpoint="sm"
-      styles={(theme) => ({
+      styles={() => ({
         main: {
-          backgroundColor: theme.colors.dark[8],
           display: 'flex',
           flexDirection: 'column',
         },
@@ -67,7 +71,7 @@ const Dashboard: FC = ({ children }) => {
       fixed
       navbar={
         <Navbar
-          padding="md"
+          p={16}
           hiddenBreakpoint="sm"
           hidden={!opened}
           width={{ sm: 200, lg: 300 }}
@@ -110,7 +114,7 @@ const Dashboard: FC = ({ children }) => {
         </Navbar>
       }
       header={
-        <Header height={70} padding="md">
+        <Header height={70} p={16}>
           <div style={{ display: 'flex', alignItems: 'center', height: '100%' }}>
             <MediaQuery largerThan="sm" styles={{ display: 'none' }}>
               <Burger
@@ -122,6 +126,14 @@ const Dashboard: FC = ({ children }) => {
               />
             </MediaQuery>
             <Title>Book a room</Title>
+            <Button
+              ml={16}
+              onClick={() =>
+                setColorScheme((current) => (current === 'dark' ? 'light' : 'dark'))
+              }
+            >
+              {colorScheme === 'dark' ? 'Licht' : 'Donker'}
+            </Button>
           </div>
         </Header>
       }
@@ -137,7 +149,6 @@ const Dashboard: FC = ({ children }) => {
         style={{
           width: '100%',
           textAlign: 'center',
-          backgroundColor: '#1A1B1E',
           marginLeft: -16,
           marginRight: -16,
           marginBottom: -16,
