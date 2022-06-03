@@ -45,7 +45,7 @@ const Auth = () => {
     );
 
   return (
-    <Paper padding="md" shadow="md" radius="md" withBorder>
+    <Paper p="md" shadow="md" radius="md" withBorder>
       <Title>Inloggen</Title>
       <form
         onSubmit={form.onSubmit(submitHandler)}

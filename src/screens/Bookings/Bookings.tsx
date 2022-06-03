@@ -52,7 +52,7 @@ const Bookings: FC = () => {
 
   return (
     <>
-      <Modal opened={!!booking} size="lx" onClose={closeHandler} title="Boeking">
+      <Modal opened={!!booking} size="xl" onClose={closeHandler} title="Boeking">
         <Booking booking={booking} closeHandler={closeHandler} />
       </Modal>
 
