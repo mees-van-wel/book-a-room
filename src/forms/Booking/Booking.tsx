@@ -19,10 +19,12 @@ import { addDoc, collection, deleteDoc, doc, setDoc } from 'firebase/firestore';
 import { FC, useCallback, useEffect, useMemo, useState } from 'react';
 
 import COLLECTIONS from '../../enums/COLLECTIONS';
+import LocalResidenceFooter from '../../footer-local-residence.jpg';
+import LocalResidenceHeader from '../../header-local-residence.jpg';
 import useFirestoreDocuments from '../../hooks/useFirestoreDocuments';
 import { BookingInterface, NewBookingInterface } from '../../interfaces/Booking';
 import { firestore } from '../../lib/firebase';
-import Logo from '../../logo.jpg';
+import LongStayBredaHeader from '../../logo.jpg';
 import Timestamp = firebase.firestore.Timestamp;
 import { useNotifications } from '@mantine/notifications';
 
@@ -114,7 +116,7 @@ const Receipt = ({
   return (
     <Document>
       <Page size="A4" style={styles.page}>
-        <Image src={Logo} style={styles.image} />
+        <Image src={LocalResidenceHeader} />
         <View style={styles.container}>
           <View style={styles.settingsContainer}>
             <Text>Invoice number: {booking.invoiceNumber}</Text>
@@ -215,6 +217,7 @@ const Receipt = ({
           <View style={styles.spacer} />
           <Text>We kindly request that you transfer the amount due within 14 days.</Text>
         </View>
+        <Image src={LocalResidenceFooter} />
       </Page>
     </Document>
   );
@@ -665,7 +668,7 @@ const Booking: FC<BookingProps> = ({ booking, closeHandler }) => {
                     totalVat={vat + cleaningFeeVat + parkingFeeVat}
                   />
                 }
-                fileName={`${booking.invoiceNumber} - ${booking.customer.name}`}
+                fileName={`${booking.invoiceNumber} - ${booking.customer.name}.pdf`}
               >
                 <Button>Download PDF</Button>
               </PDFDownloadLink>
