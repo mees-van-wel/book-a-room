@@ -119,7 +119,12 @@ const Calendar: FC<CalendarProps> = ({ events, onEventClick, onClick }) => {
           </Button>
         </Group>
       </div>
-      <div style={{ overflow: 'auto', maxHeight: '80vh' }}>
+      <div
+        style={{
+          overflow: 'auto',
+          maxHeight: 'calc(100vh - 179px)',
+        }}
+      >
         <table
           style={{
             width: '100%',
@@ -139,58 +144,63 @@ const Calendar: FC<CalendarProps> = ({ events, onEventClick, onClick }) => {
               </th>
             ))}
           </tr>
-          {rooms?.sort().map(({ name }) => (
-            <tr
-              key={name}
-              style={{
-                borderTop: 'solid gray 1px',
-              }}
-            >
-              <td
+          {rooms
+            ?.sort((a, b) => (a.name > b.name ? 1 : b.name > a.name ? -1 : 0))
+            .map(({ name }) => (
+              <tr
+                key={name}
                 style={{
-                  borderRight: 'solid gray 1px',
-                  padding: 8,
+                  borderTop: 'solid gray 1px',
                 }}
               >
-                {name}
-              </td>
-              {currentWeek?.map((day) => {
-                const event = events.find(
-                  (event) =>
-                    name === event.roomName &&
-                    // @ts-ignore
-                    (compareDates(day, event.start) ||
+                <td
+                  style={{
+                    borderRight: 'solid gray 1px',
+                    padding: 8,
+                  }}
+                >
+                  {name}
+                </td>
+                {currentWeek?.map((day) => {
+                  const event = events.find(
+                    (event) =>
+                      name === event.roomName &&
                       // @ts-ignore
-                      dayjs(day).isBetween(event.start, event.end, null, '(]')),
-                );
-
-                return (
-                  <td key={day.getDate()} style={{ padding: 8 }}>
-                    {event && (
-                      // eslint-disable-next-line jsx-a11y/click-events-have-key-events,jsx-a11y/no-noninteractive-element-interactions
-                      <p
+                      (compareDates(day, event.start) ||
                         // @ts-ignore
-                        onClick={() => onEventClick(event)}
-                        style={{
-                          cursor: 'pointer',
-                          margin: 0,
-                          backgroundColor: '#228be6',
-                          color: 'white',
-                          fontSize: 14,
-                          textAlign: 'center',
-                          marginLeft: -8,
-                          marginRight: -8,
-                          padding: '4px 8px',
-                        }}
-                      >
-                        {event.title}
-                      </p>
-                    )}
-                  </td>
-                );
-              })}
-            </tr>
-          ))}
+                        dayjs(day).isBetween(event.start, event.end, null, '(]')),
+                  );
+
+                  return (
+                    <td key={day.getDate()} style={{ padding: 8 }}>
+                      {event && (
+                        // eslint-disable-next-line jsx-a11y/click-events-have-key-events,jsx-a11y/no-noninteractive-element-interactions
+                        <p
+                          // @ts-ignore
+                          onClick={() => onEventClick(event)}
+                          style={{
+                            cursor: 'pointer',
+                            margin: 0,
+                            backgroundColor: '#228be6',
+                            color: 'white',
+                            fontSize: 14,
+                            textAlign: 'center',
+                            marginLeft: -8,
+                            marginRight: -8,
+                            padding: '4px 8px',
+                            whiteSpace: 'nowrap',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                          }}
+                        >
+                          {event.title}
+                        </p>
+                      )}
+                    </td>
+                  );
+                })}
+              </tr>
+            ))}
         </table>
       </div>
     </div>

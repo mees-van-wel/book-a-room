@@ -36,6 +36,10 @@ import getInvoiceNumber from '../../utils/invoiceNumber';
 
 const { Document, Page, Text, View, StyleSheet, PDFDownloadLink, Image } = pdf;
 
+const calcVat = (price: number, vat: number) => Math.round(price * vat) / 100;
+const calcTotalWithoutVat = (price: number, vat: number) =>
+  Math.round((price - vat) * 100) / 100;
+
 const styles = StyleSheet.create({
   page: {
     fontSize: 11,
@@ -352,19 +356,23 @@ const Booking: FC<BookingProps> = ({ booking, closeHandler }) => {
 
   const roomSelectData = useMemo(
     () =>
-      rooms?.map((room) => ({
-        value: JSON.stringify(room),
-        label: room.name,
-      })),
+      rooms
+        ?.sort((a, b) => (a.name > b.name ? 1 : b.name > a.name ? -1 : 0))
+        .map((room) => ({
+          value: JSON.stringify(room),
+          label: room.name,
+        })),
     [rooms],
   );
 
   const customerSelectData = useMemo(
     () =>
-      customers?.map((customer) => ({
-        value: JSON.stringify(customer),
-        label: customer.name,
-      })),
+      customers
+        ?.sort((a, b) => (a.name > b.name ? 1 : b.name > a.name ? -1 : 0))
+        .map((customer) => ({
+          value: JSON.stringify(customer),
+          label: customer.name,
+        })),
     [customers],
   );
 
@@ -380,11 +388,6 @@ const Booking: FC<BookingProps> = ({ booking, closeHandler }) => {
     () =>
       form.values.date ? dayjs(form.values.date[1]).diff(form.values.date[0], 'days') : 0,
     [form.values.date],
-  );
-
-  const pricePerNight = useMemo(
-    () => form.values.priceOverride ?? room?.price,
-    [form.values.priceOverride, room],
   );
 
   useEffect(() => {
@@ -407,47 +410,54 @@ const Booking: FC<BookingProps> = ({ booking, closeHandler }) => {
     }
   }, [rooms, customers]);
 
-  const totalWithoutVat = useMemo(
-    () => Math.round(pricePerNight * nights * 100) / 100,
-    [pricePerNight, nights],
+  const roomPrice = useMemo(
+    () => form.values.priceOverride ?? room?.price,
+    [form.values.priceOverride, room],
   );
 
-  const vat = useMemo(
-    () => Math.round(totalWithoutVat * form.values.btw) / 100,
-    [totalWithoutVat, form.values.btw],
+  const roomTotal = useMemo(
+    () => Math.round(roomPrice * nights * 100) / 100,
+    [roomPrice, nights],
   );
 
-  const totalNights = useMemo(() => totalWithoutVat + vat, [totalWithoutVat, vat]);
+  const roomVat = useMemo(
+    () => calcVat(roomTotal, form.values.btw),
+    [roomTotal, form.values.btw],
+  );
+
+  const roomTotalWithoutVat = useMemo(
+    () => calcTotalWithoutVat(roomTotal, roomVat),
+    [roomTotal, roomVat],
+  );
+
+  const roomWithoutVat = useMemo(
+    () => Math.round((roomTotalWithoutVat / nights) * 100) / 100,
+    [roomTotalWithoutVat, nights],
+  );
 
   const cleaningFeeVat = useMemo(
-    () =>
-      form.values.cleaningFee
-        ? Math.round(form.values.cleaningFee * form.values.cleaningFeeVat) / 100
-        : 0,
+    () => calcVat(form.values.cleaningFee ?? 0, form.values.cleaningFeeVat),
     [form.values.cleaningFee, form.values.cleaningFeeVat],
   );
 
-  const totalCleaningFee = useMemo(
-    () => (form.values.cleaningFee ? form.values.cleaningFee + cleaningFeeVat : 0),
+  const cleaningFeeWithoutVat = useMemo(
+    () => calcTotalWithoutVat(form.values.cleaningFee ?? 0, cleaningFeeVat),
     [form.values.cleaningFee, cleaningFeeVat],
   );
 
   const parkingFeeVat = useMemo(
-    () =>
-      form.values.parkingFee
-        ? Math.round(form.values.parkingFee * form.values.parkingFeeVat) / 100
-        : 0,
+    () => calcVat(form.values.parkingFee ?? 0, form.values.parkingFeeVat),
     [form.values.parkingFee, form.values.parkingFeeVat],
   );
 
-  const totalParkingFee = useMemo(
-    () => (form.values.parkingFee ? form.values.parkingFee + parkingFeeVat : 0),
+  const parkingFeeWithoutVat = useMemo(
+    () => calcTotalWithoutVat(form.values.parkingFee ?? 0, parkingFeeVat),
     [form.values.parkingFee, parkingFeeVat],
   );
 
   const total = useMemo(
-    () => totalNights + totalCleaningFee + totalParkingFee,
-    [totalNights, totalCleaningFee],
+    () => roomTotal + (form.values.cleaningFee ?? 0) + (form.values.parkingFee ?? 0),
+    [roomTotal, form.values.cleaningFee, form.values.parkingFee],
   );
 
   return (
@@ -597,36 +607,36 @@ const Booking: FC<BookingProps> = ({ booking, closeHandler }) => {
                   <tbody>
                     <tr>
                       <td>{room.name}</td>
-                      <td>{currency(pricePerNight)}</td>
+                      <td>{currency(roomWithoutVat)}</td>
                       <td>{nights}</td>
-                      <td>{currency(totalWithoutVat)}</td>
-                      <td>{`${currency(vat)} (${form.values.btw}%${
+                      <td>{currency(roomTotalWithoutVat)}</td>
+                      <td>{`${currency(roomVat)} (${form.values.btw}%${
                         form.values.btw == 0 ? ' / Verlegd' : ''
                       })`}</td>
-                      <td>{currency(totalNights)}</td>
+                      <td>{currency(roomTotal)}</td>
                     </tr>
                     {!!form.values.cleaningFee && (
                       <tr>
                         <td>Schoonmaakkosten</td>
-                        <td>{currency(form.values.cleaningFee)}</td>
+                        <td>{currency(cleaningFeeWithoutVat)}</td>
                         <td>1</td>
-                        <td>{currency(form.values.cleaningFee)}</td>
+                        <td>{currency(cleaningFeeWithoutVat)}</td>
                         <td>{`${currency(cleaningFeeVat)} (${
                           form.values.cleaningFeeVat
                         }%${form.values.cleaningFeeVat == 0 ? ' / Verlegd' : ''})`}</td>
-                        <td>{currency(form.values.cleaningFee + cleaningFeeVat)}</td>
+                        <td>{currency(form.values.cleaningFee)}</td>
                       </tr>
                     )}
                     {!!form.values.parkingFee && (
                       <tr>
                         <td>Parkeerkosten</td>
-                        <td>{currency(form.values.parkingFee)}</td>
+                        <td>{currency(parkingFeeWithoutVat)}</td>
                         <td>1</td>
-                        <td>{currency(form.values.parkingFee)}</td>
+                        <td>{currency(parkingFeeWithoutVat)}</td>
                         <td>{`${currency(parkingFeeVat)} (${form.values.parkingFeeVat}%${
                           form.values.parkingFeeVat == 0 ? ' / Verlegd' : ''
                         })`}</td>
-                        <td>{currency(form.values.parkingFee + parkingFeeVat)}</td>
+                        <td>{currency(form.values.parkingFee)}</td>
                       </tr>
                     )}
                   </tbody>
@@ -646,26 +656,24 @@ const Booking: FC<BookingProps> = ({ booking, closeHandler }) => {
                     }}
                     room={room}
                     nights={nights}
-                    pricePerNight={pricePerNight}
-                    totalWithoutVat={totalWithoutVat}
-                    vat={vat}
+                    pricePerNight={roomWithoutVat}
+                    totalWithoutVat={roomTotalWithoutVat}
+                    vat={roomVat}
                     vatPercentage={form.values.btw}
-                    totalNights={totalNights}
-                    cleaningFee={form.values.cleaningFee}
+                    totalNights={roomTotal}
+                    cleaningFee={cleaningFeeWithoutVat}
                     cleaningFeeVat={cleaningFeeVat}
                     cleaningFeeVatPercentage={form.values.cleaningFeeVat}
-                    totalCleaningFee={totalCleaningFee}
-                    parkingFee={form.values.parkingFee}
+                    totalCleaningFee={form.values.cleaningFee}
+                    parkingFee={parkingFeeWithoutVat}
                     parkingFeeVat={parkingFeeVat}
                     parkingFeeVatPercentage={form.values.parkingFeeVat}
-                    totalParkingFee={totalParkingFee}
-                    total={total}
+                    totalParkingFee={form.values.parkingFee}
                     totalMinusVat={
-                      totalWithoutVat +
-                      (form.values.cleaningFee ?? 0) +
-                      (form.values.parkingFee ?? 0)
+                      roomTotalWithoutVat + cleaningFeeWithoutVat + parkingFeeWithoutVat
                     }
-                    totalVat={vat + cleaningFeeVat + parkingFeeVat}
+                    totalVat={roomVat + cleaningFeeVat + parkingFeeVat}
+                    total={total}
                   />
                 }
                 fileName={`${booking.invoiceNumber} - ${booking.customer.name}.pdf`}
