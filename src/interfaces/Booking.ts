@@ -19,8 +19,11 @@ export interface BookingInterface extends NewBookingInterface {
   parkingFeeVat: number;
   customer: CustomerInterface;
   priceOverride: number;
-  invoiceNumber: string;
-  invoiceDate: string;
+  invoices: {
+    number: string;
+    start: Date;
+    end: Date;
+  }[];
 }
 
 export interface FirestoreBookingInterface {
@@ -35,6 +38,9 @@ export interface FirestoreBookingInterface {
   parkingFeeVat: number;
   customer: CustomerInterface;
   priceOverride: number;
-  invoiceNumber: string;
-  invoiceDate: Timestamp;
+  invoices: {
+    number: string;
+    start: Timestamp;
+    end: Timestamp;
+  }[];
 }

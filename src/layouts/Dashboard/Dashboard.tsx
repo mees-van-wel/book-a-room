@@ -160,10 +160,6 @@ const Dashboard: FC = ({ children }) => {
       >
         <Text>
           Developed by{' '}
-          <Anchor target="_blank" href="https://meesvanwel.nl/">
-            Mees van Wel
-          </Anchor>
-          {' @ '}
           <Anchor target="_blank" href="https://hexa-it.nl/">
             Hexa-IT
           </Anchor>

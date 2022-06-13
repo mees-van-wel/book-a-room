@@ -27,18 +27,22 @@ import { firestore } from '../../lib/firebase';
 import LongStayBredaHeader from '../../logo.jpg';
 import Timestamp = firebase.firestore.Timestamp;
 import { useNotifications } from '@mantine/notifications';
+import isBetween from 'dayjs/plugin/isBetween';
 
 import { CustomerInterface } from '../../interfaces/Customer';
 import { FireStoreRoomInterface } from '../../interfaces/Room';
 import { SettingsInterface } from '../../interfaces/Settings';
 import currency from '../../utils/currency';
 import getInvoiceNumber from '../../utils/invoiceNumber';
+dayjs.extend(isBetween);
 
 const { Document, Page, Text, View, StyleSheet, PDFDownloadLink, Image } = pdf;
 
-const calcVat = (price: number, vat: number) => Math.round(price * vat) / 100;
+const calcVat = (price: number, vat: number) =>
+  Math.round((price / (100 + vat)) * vat * 100) / 100;
 const calcTotalWithoutVat = (price: number, vat: number) =>
   Math.round((price - vat) * 100) / 100;
+const calcNights = (end: Date, start: Date) => dayjs(end).diff(start, 'days');
 
 const styles = StyleSheet.create({
   page: {
@@ -121,6 +125,7 @@ const Receipt = ({
     <Document>
       <Page size="A4" style={styles.page}>
         <Image src={LocalResidenceHeader} />
+        {/*<Image src={LongStayBredaHeader} />*/}
         <View style={styles.container}>
           <View style={styles.settingsContainer}>
             <Text>Invoice number: {booking.invoiceNumber}</Text>
@@ -177,14 +182,22 @@ const Receipt = ({
               <Text>{`${nights} (${booking.date?.[0].toLocaleDateString(
                 'nl-NL',
               )} - ${booking.date?.[1].toLocaleDateString('nl-NL')})`}</Text>
-              {cleaningFee ? <Text>1</Text> : <Text />}
-              {parkingFee ? <Text>1</Text> : <Text />}
+              {cleaningFee ? <Text>{nights}</Text> : <Text />}
+              {parkingFee ? <Text>{nights}</Text> : <Text />}
             </View>
             <View>
               <Text style={styles.header}>Total excluding VAT</Text>
               <Text>{currency(totalWithoutVat)}</Text>
-              {cleaningFee ? <Text>{currency(cleaningFee)}</Text> : <Text />}
-              {parkingFee ? <Text>{currency(parkingFee)}</Text> : <Text />}
+              {cleaningFee ? (
+                <Text>{currency(totalCleaningFee - cleaningFeeVat)}</Text>
+              ) : (
+                <Text />
+              )}
+              {parkingFee ? (
+                <Text>{currency(totalParkingFee - parkingFeeVat)}</Text>
+              ) : (
+                <Text />
+              )}
             </View>
             <View>
               <Text style={styles.header}>VAT</Text>
@@ -216,7 +229,10 @@ const Receipt = ({
           <View style={styles.spacer} />
           <Text>Total excluding VAT: {currency(totalMinusVat)}</Text>
           <Text>Total VAT: {currency(totalVat)}</Text>
-          <Text>Total: {currency(total)}</Text>
+          <Text>
+            Total:{' '}
+            {currency(totalNights + (totalCleaningFee ?? 0) + (totalParkingFee ?? 0))}
+          </Text>
           <View style={styles.spacer} />
           <View style={styles.spacer} />
           <Text>We kindly request that you transfer the amount due within 14 days.</Text>
@@ -249,6 +265,7 @@ interface FormData {
 
 const Booking: FC<BookingProps> = ({ booking, closeHandler }) => {
   const isBookingCreated = useMemo(() => booking && 'id' in booking, [booking]);
+  const [invoicePeriod, setInvoicePeriod] = useState(undefined);
   const [active, setActive] = useState(isBookingCreated ? 1 : 0);
   const nextStep = () => setActive((current) => current + 1);
   const prevStep = () => setActive((current) => current - 1);
@@ -325,17 +342,7 @@ const Booking: FC<BookingProps> = ({ booking, closeHandler }) => {
 
       if (booking && 'id' in booking)
         await setDoc(doc(firestore, COLLECTIONS.BOOKINGS, booking.id), bookingToSend);
-      else {
-        await addDoc(collection(firestore, COLLECTIONS.BOOKINGS), {
-          ...bookingToSend,
-          invoiceNumber: getInvoiceNumber(settings.invoices),
-          invoiceDate: Timestamp.fromDate(new Date()),
-        });
-        await setDoc(doc(firestore, COLLECTIONS.SETTINGS, settings.id), {
-          ...settings,
-          invoices: settings.invoices ? settings.invoices + 1 : 1,
-        });
-      }
+      else await addDoc(collection(firestore, COLLECTIONS.BOOKINGS), bookingToSend);
 
       isBookingCreated ? setActive(1) : closeHandler();
 
@@ -385,8 +392,7 @@ const Booking: FC<BookingProps> = ({ booking, closeHandler }) => {
   );
 
   const nights = useMemo(
-    () =>
-      form.values.date ? dayjs(form.values.date[1]).diff(form.values.date[0], 'days') : 0,
+    () => (form.values.date ? calcNights(form.values.date[1], form.values.date[0]) : 0),
     [form.values.date],
   );
 
@@ -458,6 +464,83 @@ const Booking: FC<BookingProps> = ({ booking, closeHandler }) => {
   const total = useMemo(
     () => roomTotal + (form.values.cleaningFee ?? 0) + (form.values.parkingFee ?? 0),
     [roomTotal, form.values.cleaningFee, form.values.parkingFee],
+  );
+
+  const createInvoice = useCallback(async () => {
+    if (settings && invoicePeriod?.[1])
+      await setDoc(doc(firestore, COLLECTIONS.SETTINGS, settings.id), {
+        ...settings,
+        invoices: settings.invoices ? settings.invoices + 1 : 1,
+      });
+
+    if (booking && invoicePeriod) {
+      const { date, room, priceOverride, cleaningFee, parkingFee, customer } =
+        form.values;
+
+      const bookingToSend = {
+        ...form.values,
+        invoices: booking.invoices
+          ? [
+              ...booking.invoices,
+              {
+                number: getInvoiceNumber(settings.invoices),
+                date: Timestamp.fromDate(new Date()),
+                start: Timestamp.fromDate(invoicePeriod[0]),
+                end: Timestamp.fromDate(invoicePeriod[1]),
+              },
+            ]
+          : [
+              {
+                number: getInvoiceNumber(settings.invoices),
+                date: Timestamp.fromDate(new Date()),
+                start: Timestamp.fromDate(invoicePeriod[0]),
+                end: Timestamp.fromDate(invoicePeriod[1]),
+              },
+            ],
+        start: date?.[0] && Timestamp.fromDate(date[0]),
+        end: date?.[1] && Timestamp.fromDate(date[1]),
+        room: room ? JSON.parse(room) : booking && 'room' in booking && booking.room,
+        customer: customer
+          ? JSON.parse(customer)
+          : booking && 'customer' in booking && booking.customer,
+        priceOverride: priceOverride ?? 0,
+        cleaningFee: cleaningFee ?? 0,
+        parkingFee: parkingFee ?? 0,
+      };
+
+      await setDoc(doc(firestore, COLLECTIONS.BOOKINGS, booking.id), bookingToSend);
+    }
+
+    setInvoicePeriod(undefined);
+    closeHandler();
+  }, [form.values, setInvoicePeriod, settings, booking, invoicePeriod, closeHandler]);
+
+  const deleteInvoice = useCallback(
+    async (index) => {
+      if (booking) {
+        const { date, room, priceOverride, cleaningFee, parkingFee, customer } =
+          form.values;
+
+        const bookingToSend = {
+          ...form.values,
+          invoices: booking?.invoices?.filter((invoice, i) => i !== index),
+          start: date?.[0] && Timestamp.fromDate(date[0]),
+          end: date?.[1] && Timestamp.fromDate(date[1]),
+          room: room ? JSON.parse(room) : booking && 'room' in booking && booking.room,
+          customer: customer
+            ? JSON.parse(customer)
+            : booking && 'customer' in booking && booking.customer,
+          priceOverride: priceOverride ?? 0,
+          cleaningFee: cleaningFee ?? 0,
+          parkingFee: parkingFee ?? 0,
+        };
+
+        await setDoc(doc(firestore, COLLECTIONS.BOOKINGS, booking.id), bookingToSend);
+      }
+
+      closeHandler();
+    },
+    [booking, form.values, closeHandler],
   );
 
   return (
@@ -584,6 +667,7 @@ const Booking: FC<BookingProps> = ({ booking, closeHandler }) => {
           !!form.values.date[0] &&
           !!form.values.date[1] && (
             <Stepper.Step label="Bon" allowStepSelect={false}>
+              {form.values.notes && <Text>Opmerkingen: {form.values.notes}</Text>}
               <ScrollArea
                 style={{
                   maxWidth: '75vw',
@@ -643,46 +727,130 @@ const Booking: FC<BookingProps> = ({ booking, closeHandler }) => {
                 </Table>
               </ScrollArea>
               <p>{`Totaal: ${currency(total)}`}</p>
-              <PDFDownloadLink
-                document={
-                  <Receipt
-                    settings={settings}
-                    booking={{
-                      ...form.values,
-                      invoiceNumber: booking.invoiceNumber,
-                      // @ts-ignore
-                      invoiceDate: booking.invoiceDate,
-                      customer: booking.customer,
-                    }}
-                    room={room}
-                    nights={nights}
-                    pricePerNight={roomWithoutVat}
-                    totalWithoutVat={roomTotalWithoutVat}
-                    vat={roomVat}
-                    vatPercentage={form.values.btw}
-                    totalNights={roomTotal}
-                    cleaningFee={cleaningFeeWithoutVat}
-                    cleaningFeeVat={cleaningFeeVat}
-                    cleaningFeeVatPercentage={form.values.cleaningFeeVat}
-                    totalCleaningFee={form.values.cleaningFee}
-                    parkingFee={parkingFeeWithoutVat}
-                    parkingFeeVat={parkingFeeVat}
-                    parkingFeeVatPercentage={form.values.parkingFeeVat}
-                    totalParkingFee={form.values.parkingFee}
-                    totalMinusVat={
-                      roomTotalWithoutVat + cleaningFeeWithoutVat + parkingFeeWithoutVat
+              <Group>
+                <DateRangePicker
+                  placeholder="Factureer periode"
+                  locale="nl"
+                  value={invoicePeriod}
+                  onChange={setInvoicePeriod}
+                  minDate={form.values.date[0]}
+                  maxDate={form.values.date[1]}
+                  excludeDate={(date) => {
+                    for (let i = 0; i < booking?.invoices?.length ?? 0; i++) {
+                      const invoice = booking?.invoices?.[i];
+                      if (invoice) {
+                        const { start, end } = invoice;
+                        const result = dayjs(date).isBetween(
+                          start.toDate(),
+                          end.toDate(),
+                          null,
+                          '[]',
+                        );
+                        if (result) return result;
+                      }
                     }
-                    totalVat={roomVat + cleaningFeeVat + parkingFeeVat}
-                    total={total}
-                  />
-                }
-                fileName={`${booking.invoiceNumber} - ${booking.customer.name}.pdf`}
-              >
-                <Button>Download PDF</Button>
-              </PDFDownloadLink>
-              <br />
-              <br />
-              {form.values.notes && <Text>Opmerkingen: {form.values.notes}</Text>}
+                    return false;
+                  }}
+                />
+                {invoicePeriod && invoicePeriod[1] && (
+                  <Button onClick={createInvoice}>Maak factuur</Button>
+                )}
+              </Group>
+              <div style={{ marginTop: 16 }}>
+                {booking?.invoices?.map((invoice, index) => {
+                  const invoiceNights = calcNights(
+                    invoice.end.toDate(),
+                    invoice.start.toDate(),
+                  );
+
+                  return (
+                    <>
+                      <div
+                        key={invoice.number}
+                        style={{
+                          borderTop: 'solid 1px gray',
+                          display: 'inline-block',
+                          marginBottom: 16,
+                        }}
+                      >
+                        <p style={{ margin: 0 }}>{`${index + 1}.`}</p>
+                        <p style={{ margin: 0 }}>{`Nummer: ${invoice.number}`}</p>
+                        <p style={{ margin: 0 }}>{`Aanmaakdatum: ${invoice.date
+                          .toDate()
+                          .toLocaleDateString('nl-NL')}`}</p>
+                        <p style={{ margin: 0 }}>{`Periode: ${invoice.start
+                          .toDate()
+                          .toLocaleDateString('nl-NL')} - ${invoice.end
+                          .toDate()
+                          .toLocaleDateString('nl-NL')} (${invoiceNights} nachten)`}</p>
+                        <Group
+                          style={{
+                            marginTop: 8,
+                          }}
+                        >
+                          <PDFDownloadLink
+                            document={
+                              <Receipt
+                                settings={settings}
+                                booking={{
+                                  ...form.values,
+                                  invoiceNumber: invoice.number,
+                                  invoiceDate: invoice.date,
+                                  customer: booking.customer,
+                                  date: [invoice.start.toDate(), invoice.end.toDate()],
+                                }}
+                                room={room}
+                                nights={calcNights(
+                                  invoice.end.toDate(),
+                                  invoice.start.toDate(),
+                                )}
+                                pricePerNight={roomWithoutVat}
+                                totalWithoutVat={
+                                  (roomTotalWithoutVat / nights) * invoiceNights
+                                }
+                                vat={(roomVat / nights) * invoiceNights}
+                                vatPercentage={form.values.btw}
+                                totalNights={(roomTotal / nights) * invoiceNights}
+                                cleaningFee={cleaningFeeWithoutVat / nights}
+                                cleaningFeeVat={(cleaningFeeVat / nights) * invoiceNights}
+                                cleaningFeeVatPercentage={form.values.cleaningFeeVat}
+                                totalCleaningFee={
+                                  (form.values.cleaningFee / nights) * invoiceNights
+                                }
+                                parkingFee={parkingFeeWithoutVat / nights}
+                                parkingFeeVat={(parkingFeeVat / nights) * invoiceNights}
+                                parkingFeeVatPercentage={form.values.parkingFeeVat}
+                                totalParkingFee={
+                                  (form.values.parkingFee / nights) * invoiceNights
+                                }
+                                totalMinusVat={
+                                  ((roomTotalWithoutVat +
+                                    cleaningFeeWithoutVat +
+                                    parkingFeeWithoutVat) /
+                                    nights) *
+                                  invoiceNights
+                                }
+                                totalVat={
+                                  ((roomVat + cleaningFeeVat + parkingFeeVat) / nights) *
+                                  invoiceNights
+                                }
+                                total={(total / nights) * invoiceNights}
+                              />
+                            }
+                            fileName={`${invoice.number} - ${booking.customer.name}.pdf`}
+                          >
+                            <Button>Download PDF</Button>
+                          </PDFDownloadLink>
+                          <Button color="red" onClick={() => deleteInvoice(index)}>
+                            Verwijderen
+                          </Button>
+                        </Group>
+                      </div>
+                      <br />
+                    </>
+                  );
+                })}
+              </div>
             </Stepper.Step>
           )}
       </Stepper>
