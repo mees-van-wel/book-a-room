@@ -133,11 +133,20 @@ const Calendar: FC<CalendarProps> = ({ events, onEventClick, onClick }) => {
           }}
         >
           <tr>
-            <th style={{ textAlign: 'left', padding: 8 }}>Kamer</th>
+            <th />
             {currentWeek?.map((day) => (
-              <th key={day.getDate()} style={{ textAlign: 'center', padding: 8 }}>
+              <th
+                key={day.getDate()}
+                style={{
+                  textAlign: 'center',
+                  padding: 8,
+                  whiteSpace: 'nowrap',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                }}
+              >
                 {day.toLocaleDateString('nl-NL', {
-                  weekday: 'long',
+                  weekday: 'short',
                   day: 'numeric',
                   month: 'long',
                 })}
@@ -162,7 +171,7 @@ const Calendar: FC<CalendarProps> = ({ events, onEventClick, onClick }) => {
                   {name}
                 </td>
                 {currentWeek?.map((day) => {
-                  const event = events.find(
+                  const event = events.filter(
                     (event) =>
                       name === event.roomName &&
                       // @ts-ignore
@@ -171,31 +180,42 @@ const Calendar: FC<CalendarProps> = ({ events, onEventClick, onClick }) => {
                         dayjs(day).isBetween(event.start, event.end, null, '(]')),
                   );
 
+                  console.log(event);
+
                   return (
-                    <td key={day.getDate()} style={{ padding: 8 }}>
-                      {event && (
-                        // eslint-disable-next-line jsx-a11y/click-events-have-key-events,jsx-a11y/no-noninteractive-element-interactions
-                        <p
-                          // @ts-ignore
-                          onClick={() => onEventClick(event)}
-                          style={{
-                            cursor: 'pointer',
-                            margin: 0,
-                            backgroundColor: '#228be6',
-                            color: 'white',
-                            fontSize: 14,
-                            textAlign: 'center',
-                            marginLeft: -8,
-                            marginRight: -8,
-                            padding: '4px 8px',
-                            whiteSpace: 'nowrap',
-                            overflow: 'hidden',
-                            textOverflow: 'ellipsis',
-                          }}
-                        >
-                          {event.title}
-                        </p>
-                      )}
+                    <td
+                      key={day.getDate()}
+                      style={{
+                        verticalAlign: 'top',
+                      }}
+                    >
+                      {!!event.length &&
+                        event.map((e, i) => (
+                          // eslint-disable-next-line jsx-a11y/click-events-have-key-events,jsx-a11y/no-noninteractive-element-interactions
+                          <p
+                            key={i}
+                            // @ts-ignore
+                            onClick={() => onEventClick(e)}
+                            style={{
+                              cursor: 'pointer',
+                              margin: 0,
+                              backgroundColor: '#228be6',
+                              color: 'white',
+                              fontSize: 14,
+                              textAlign: 'center',
+                              marginLeft: -1,
+                              marginRight: -1,
+                              marginTop: 8,
+                              marginBottom: 8,
+                              padding: '4px 8px',
+                              whiteSpace: 'nowrap',
+                              overflow: 'hidden',
+                              textOverflow: 'ellipsis',
+                            }}
+                          >
+                            {e.title}
+                          </p>
+                        ))}
                     </td>
                   );
                 })}

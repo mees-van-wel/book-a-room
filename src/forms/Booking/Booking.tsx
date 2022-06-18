@@ -9,6 +9,7 @@ import {
   Stepper,
   Table,
   Textarea,
+  TextInput,
 } from '@mantine/core';
 import { DateRangePicker } from '@mantine/dates';
 import { useForm } from '@mantine/hooks';
@@ -43,6 +44,14 @@ const calcVat = (price: number, vat: number) =>
 const calcTotalWithoutVat = (price: number, vat: number) =>
   Math.round((price - vat) * 100) / 100;
 const calcNights = (end: Date, start: Date) => dayjs(end).diff(start, 'days');
+
+const compareDates = (firstDate: Date, secondDate: Date) => {
+  return (
+    firstDate.getDate() == secondDate.getDate() &&
+    firstDate.getMonth() == secondDate.getMonth() &&
+    firstDate.getFullYear() == secondDate.getFullYear()
+  );
+};
 
 const styles = StyleSheet.create({
   page: {
@@ -99,6 +108,7 @@ const Receipt = ({
   total,
   totalMinusVat,
   totalVat,
+  isLastInvoice,
 }: {
   room: FireStoreRoomInterface;
   booking: FormData;
@@ -120,12 +130,13 @@ const Receipt = ({
   total: number;
   totalMinusVat: number;
   totalVat: number;
+  isLastInvoice: boolean;
 }) => {
   return (
     <Document>
       <Page size="A4" style={styles.page}>
-        <Image src={LocalResidenceHeader} />
-        {/*<Image src={LongStayBredaHeader} />*/}
+        {/*<Image src={LocalResidenceHeader} />*/}
+        <Image src={LongStayBredaHeader} />
         <View style={styles.container}>
           <View style={styles.settingsContainer}>
             <Text>Invoice number: {booking.invoiceNumber}</Text>
@@ -162,19 +173,25 @@ const Receipt = ({
             <Text>Telephone number: {booking.customer.phoneNumber}</Text>
             <View style={styles.spacer} />
             <Text>{booking.customer.extra}</Text>
+            <Text>{booking.extraOne}</Text>
+            <Text>{booking.extraTwo}</Text>
             <View style={styles.spacer} />
           </View>
           <View style={styles.table}>
             <View>
               <Text style={styles.header}>Service</Text>
               <Text>{room.name}</Text>
-              {cleaningFee ? <Text>Schoonmaakkosten</Text> : <Text />}
-              {parkingFee ? <Text>Parkeerkosten</Text> : <Text />}
+              {cleaningFee && isLastInvoice ? <Text>Cleaning fee</Text> : <Text />}
+              {parkingFee ? <Text>Parking costs</Text> : <Text />}
             </View>
             <View>
               <Text style={styles.header}>Unit price</Text>
               <Text>{currency(pricePerNight)}</Text>
-              {cleaningFee ? <Text>{currency(cleaningFee)}</Text> : <Text />}
+              {cleaningFee && isLastInvoice ? (
+                <Text>{currency(cleaningFee)}</Text>
+              ) : (
+                <Text />
+              )}
               {parkingFee ? <Text>{currency(parkingFee)}</Text> : <Text />}
             </View>
             <View>
@@ -182,13 +199,13 @@ const Receipt = ({
               <Text>{`${nights} (${booking.date?.[0].toLocaleDateString(
                 'nl-NL',
               )} - ${booking.date?.[1].toLocaleDateString('nl-NL')})`}</Text>
-              {cleaningFee ? <Text>{nights}</Text> : <Text />}
+              {cleaningFee && isLastInvoice ? <Text>1</Text> : <Text />}
               {parkingFee ? <Text>{nights}</Text> : <Text />}
             </View>
             <View>
               <Text style={styles.header}>Total excluding VAT</Text>
               <Text>{currency(totalWithoutVat)}</Text>
-              {cleaningFee ? (
+              {cleaningFee && isLastInvoice ? (
                 <Text>{currency(totalCleaningFee - cleaningFeeVat)}</Text>
               ) : (
                 <Text />
@@ -204,7 +221,7 @@ const Receipt = ({
               <Text>{`${currency(vat)} (${vatPercentage}%${
                 vatPercentage == 0 ? ' / Verlegd' : ''
               })`}</Text>
-              {cleaningFee ? (
+              {cleaningFee && isLastInvoice ? (
                 <Text>{`${currency(cleaningFeeVat)} (${cleaningFeeVatPercentage}%${
                   cleaningFeeVatPercentage == 0 ? ' / Verlegd' : ''
                 })`}</Text>
@@ -222,7 +239,11 @@ const Receipt = ({
             <View>
               <Text style={styles.header}>Total</Text>
               <Text>{currency(totalNights)}</Text>
-              {cleaningFee ? <Text>{currency(totalCleaningFee)}</Text> : <Text />}
+              {cleaningFee && isLastInvoice ? (
+                <Text>{currency(totalCleaningFee)}</Text>
+              ) : (
+                <Text />
+              )}
               {parkingFee ? <Text>{currency(totalParkingFee)}</Text> : <Text />}
             </View>
           </View>
@@ -237,7 +258,7 @@ const Receipt = ({
           <View style={styles.spacer} />
           <Text>We kindly request that you transfer the amount due within 14 days.</Text>
         </View>
-        <Image src={LocalResidenceFooter} />
+        {/*<Image src={LocalResidenceFooter} />*/}
       </Page>
     </Document>
   );
@@ -261,6 +282,8 @@ interface FormData {
   notes: string;
   invoiceNumber: string;
   invoiceDate: Timestamp;
+  extraOne: string | null;
+  extraTwo: string | null;
 }
 
 const Booking: FC<BookingProps> = ({ booking, closeHandler }) => {
@@ -308,6 +331,8 @@ const Booking: FC<BookingProps> = ({ booking, closeHandler }) => {
               ? booking.priceOverride
               : null,
           notes: 'notes' in booking ? booking.notes : '',
+          extraOne: 'extraOne' in booking ? booking.extraOne : '',
+          extraTwo: 'extraTwo' in booking ? booking.extraTwo : '',
         }
       : {
           date: null,
@@ -320,6 +345,8 @@ const Booking: FC<BookingProps> = ({ booking, closeHandler }) => {
           customer: null,
           priceOverride: null,
           notes: '',
+          extraOne: '',
+          extraTwo: '',
         },
   });
 
@@ -659,6 +686,16 @@ const Booking: FC<BookingProps> = ({ booking, closeHandler }) => {
             placeholder="Opmerkingen"
             {...form.getInputProps('notes')}
           />
+          <TextInput
+            label="Extra 1"
+            placeholder="Extra 1"
+            {...form.getInputProps('extraOne')}
+          />
+          <TextInput
+            label="Extra 2"
+            placeholder="Extra 2"
+            {...form.getInputProps('extraTwo')}
+          />
         </Stepper.Step>
         {booking &&
           'id' in booking &&
@@ -714,8 +751,8 @@ const Booking: FC<BookingProps> = ({ booking, closeHandler }) => {
                     {!!form.values.parkingFee && (
                       <tr>
                         <td>Parkeerkosten</td>
-                        <td>{currency(parkingFeeWithoutVat)}</td>
-                        <td>1</td>
+                        <td>{currency(parkingFeeWithoutVat / nights)}</td>
+                        <td>{nights}</td>
                         <td>{currency(parkingFeeWithoutVat)}</td>
                         <td>{`${currency(parkingFeeVat)} (${form.values.parkingFeeVat}%${
                           form.values.parkingFeeVat == 0 ? ' / Verlegd' : ''
@@ -811,12 +848,10 @@ const Booking: FC<BookingProps> = ({ booking, closeHandler }) => {
                                 vat={(roomVat / nights) * invoiceNights}
                                 vatPercentage={form.values.btw}
                                 totalNights={(roomTotal / nights) * invoiceNights}
-                                cleaningFee={cleaningFeeWithoutVat / nights}
-                                cleaningFeeVat={(cleaningFeeVat / nights) * invoiceNights}
+                                cleaningFee={cleaningFeeWithoutVat}
+                                cleaningFeeVat={cleaningFeeVat}
                                 cleaningFeeVatPercentage={form.values.cleaningFeeVat}
-                                totalCleaningFee={
-                                  (form.values.cleaningFee / nights) * invoiceNights
-                                }
+                                totalCleaningFee={form.values.cleaningFee}
                                 parkingFee={parkingFeeWithoutVat / nights}
                                 parkingFeeVat={(parkingFeeVat / nights) * invoiceNights}
                                 parkingFeeVatPercentage={form.values.parkingFeeVat}
@@ -835,6 +870,14 @@ const Booking: FC<BookingProps> = ({ booking, closeHandler }) => {
                                   invoiceNights
                                 }
                                 total={(total / nights) * invoiceNights}
+                                isLastInvoice={
+                                  form.values.date?.[1]
+                                    ? compareDates(
+                                        form.values.date[1],
+                                        invoice.end.toDate(),
+                                      )
+                                    : false
+                                }
                               />
                             }
                             fileName={`${invoice.number} - ${booking.customer.name}.pdf`}

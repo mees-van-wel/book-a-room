@@ -24,6 +24,8 @@ export interface BookingInterface extends NewBookingInterface {
     start: Date;
     end: Date;
   }[];
+  extraOne: string;
+  extraTwo: string;
 }
 
 export interface FirestoreBookingInterface {
@@ -43,4 +45,6 @@ export interface FirestoreBookingInterface {
     start: Timestamp;
     end: Timestamp;
   }[];
+  extraOne: string;
+  extraTwo: string;
 }
