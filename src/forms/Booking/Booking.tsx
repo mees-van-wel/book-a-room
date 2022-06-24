@@ -104,6 +104,8 @@ const Receipt = ({
   parkingFeeVat,
   parkingFeeVatPercentage,
   totalParkingFee,
+  touristTax,
+  touristTaxTotal,
   totalNights,
   total,
   totalMinusVat,
@@ -126,6 +128,8 @@ const Receipt = ({
   parkingFeeVat: number;
   parkingFeeVatPercentage: number;
   totalParkingFee: number;
+  touristTax: number;
+  touristTaxTotal: number;
   totalNights: number;
   total: number;
   totalMinusVat: number;
@@ -183,6 +187,7 @@ const Receipt = ({
               <Text>{room.name}</Text>
               {cleaningFee && isLastInvoice ? <Text>Cleaning fee</Text> : <Text />}
               {parkingFee ? <Text>Parking costs</Text> : <Text />}
+              {touristTax ? <Text>Tourist tax</Text> : <Text />}
             </View>
             <View>
               <Text style={styles.header}>Unit price</Text>
@@ -193,6 +198,7 @@ const Receipt = ({
                 <Text />
               )}
               {parkingFee ? <Text>{currency(parkingFee)}</Text> : <Text />}
+              {touristTax ? <Text>{currency(touristTax)}</Text> : <Text />}
             </View>
             <View>
               <Text style={styles.header}>Amount</Text>
@@ -201,6 +207,7 @@ const Receipt = ({
               )} - ${booking.date?.[1].toLocaleDateString('nl-NL')})`}</Text>
               {cleaningFee && isLastInvoice ? <Text>1</Text> : <Text />}
               {parkingFee ? <Text>{nights}</Text> : <Text />}
+              {touristTax ? <Text>{nights}</Text> : <Text />}
             </View>
             <View>
               <Text style={styles.header}>Total excluding VAT</Text>
@@ -215,6 +222,7 @@ const Receipt = ({
               ) : (
                 <Text />
               )}
+              {touristTax ? <Text>{currency(touristTaxTotal)}</Text> : <Text />}
             </View>
             <View>
               <Text style={styles.header}>VAT</Text>
@@ -235,6 +243,7 @@ const Receipt = ({
               ) : (
                 <Text />
               )}
+              {touristTax ? <Text>{`${currency(0)} (0%)`}</Text> : <Text />}
             </View>
             <View>
               <Text style={styles.header}>Total</Text>
@@ -245,6 +254,7 @@ const Receipt = ({
                 <Text />
               )}
               {parkingFee ? <Text>{currency(totalParkingFee)}</Text> : <Text />}
+              {touristTax ? <Text>{currency(touristTaxTotal)}</Text> : <Text />}
             </View>
           </View>
           <View style={styles.spacer} />
@@ -252,7 +262,12 @@ const Receipt = ({
           <Text>Total VAT: {currency(totalVat)}</Text>
           <Text>
             Total:{' '}
-            {currency(totalNights + (totalCleaningFee ?? 0) + (totalParkingFee ?? 0))}
+            {currency(
+              totalNights +
+                (isLastInvoice && totalCleaningFee ? totalCleaningFee : 0) +
+                (totalParkingFee ?? 0) +
+                (touristTaxTotal ?? 0),
+            )}
           </Text>
           <View style={styles.spacer} />
           <View style={styles.spacer} />
@@ -277,6 +292,7 @@ interface FormData {
   cleaningFeeVat: number;
   parkingFee: number;
   parkingFeeVat: number;
+  touristTax: number;
   customer: any;
   priceOverride: number | null;
   notes: string;
@@ -325,6 +341,7 @@ const Booking: FC<BookingProps> = ({ booking, closeHandler }) => {
           cleaningFeeVat: 'cleaningFeeVat' in booking ? booking.cleaningFeeVat : 21,
           parkingFee: 'parkingFee' in booking ? booking.parkingFee : null,
           parkingFeeVat: 'parkingFeeVat' in booking ? booking.parkingFeeVat : 21,
+          touristTax: 'touristTax' in booking ? booking.touristTax : null,
           customer: 'customer' in booking ? JSON.stringify(booking.customer) : null,
           priceOverride:
             'priceOverride' in booking && !!booking.priceOverride
@@ -342,6 +359,7 @@ const Booking: FC<BookingProps> = ({ booking, closeHandler }) => {
           cleaningFeeVat: 21,
           parkingFee: null,
           parkingFeeVat: 21,
+          touristTax: null,
           customer: null,
           priceOverride: null,
           notes: '',
@@ -352,7 +370,8 @@ const Booking: FC<BookingProps> = ({ booking, closeHandler }) => {
 
   const submitHandler = useCallback(
     async (values: FormData) => {
-      const { date, room, priceOverride, cleaningFee, parkingFee, customer } = values;
+      const { date, room, priceOverride, cleaningFee, parkingFee, touristTax, customer } =
+        values;
 
       const bookingToSend = {
         ...values,
@@ -365,6 +384,7 @@ const Booking: FC<BookingProps> = ({ booking, closeHandler }) => {
         priceOverride: priceOverride ?? 0,
         cleaningFee: cleaningFee ?? 0,
         parkingFee: parkingFee ?? 0,
+        touristTax: touristTax ?? 0,
       };
 
       if (booking && 'id' in booking)
@@ -488,9 +508,18 @@ const Booking: FC<BookingProps> = ({ booking, closeHandler }) => {
     [form.values.parkingFee, parkingFeeVat],
   );
 
+  const touristTax = useMemo(
+    () => Math.round((form.values.touristTax ?? 0) * nights * 100) / 100,
+    [form.values.touristTax, nights],
+  );
+
   const total = useMemo(
-    () => roomTotal + (form.values.cleaningFee ?? 0) + (form.values.parkingFee ?? 0),
-    [roomTotal, form.values.cleaningFee, form.values.parkingFee],
+    () =>
+      roomTotal +
+      (form.values.cleaningFee ?? 0) +
+      (form.values.parkingFee ?? 0) +
+      (touristTax ?? 0),
+    [roomTotal, form.values.cleaningFee, form.values.parkingFee, touristTax],
   );
 
   const createInvoice = useCallback(async () => {
@@ -501,7 +530,7 @@ const Booking: FC<BookingProps> = ({ booking, closeHandler }) => {
       });
 
     if (booking && invoicePeriod) {
-      const { date, room, priceOverride, cleaningFee, parkingFee, customer } =
+      const { date, room, priceOverride, cleaningFee, parkingFee, touristTax, customer } =
         form.values;
 
       const bookingToSend = {
@@ -533,6 +562,7 @@ const Booking: FC<BookingProps> = ({ booking, closeHandler }) => {
         priceOverride: priceOverride ?? 0,
         cleaningFee: cleaningFee ?? 0,
         parkingFee: parkingFee ?? 0,
+        touristTax: touristTax ?? 0,
       };
 
       await setDoc(doc(firestore, COLLECTIONS.BOOKINGS, booking.id), bookingToSend);
@@ -545,8 +575,15 @@ const Booking: FC<BookingProps> = ({ booking, closeHandler }) => {
   const deleteInvoice = useCallback(
     async (index) => {
       if (booking) {
-        const { date, room, priceOverride, cleaningFee, parkingFee, customer } =
-          form.values;
+        const {
+          date,
+          room,
+          priceOverride,
+          cleaningFee,
+          parkingFee,
+          touristTax,
+          customer,
+        } = form.values;
 
         const bookingToSend = {
           ...form.values,
@@ -560,6 +597,7 @@ const Booking: FC<BookingProps> = ({ booking, closeHandler }) => {
           priceOverride: priceOverride ?? 0,
           cleaningFee: cleaningFee ?? 0,
           parkingFee: parkingFee ?? 0,
+          touristTax: touristTax ?? 0,
         };
 
         await setDoc(doc(firestore, COLLECTIONS.BOOKINGS, booking.id), bookingToSend);
@@ -664,6 +702,15 @@ const Booking: FC<BookingProps> = ({ booking, closeHandler }) => {
               {...form.getInputProps('parkingFeeVat')}
             />
           )}
+          <NumberInput
+            min={0}
+            noClampOnBlur
+            decimalSeparator=","
+            icon="€"
+            label="Toeristenbelasting per nacht"
+            placeholder="Toeristenbelasting per nacht"
+            {...form.getInputProps('touristTax')}
+          />
           <Select
             required={!(booking && 'customer' in booking)}
             label="Klant"
@@ -760,6 +807,16 @@ const Booking: FC<BookingProps> = ({ booking, closeHandler }) => {
                         <td>{currency(form.values.parkingFee)}</td>
                       </tr>
                     )}
+                    {!!form.values.touristTax && (
+                      <tr>
+                        <td>Toeristenbelasting</td>
+                        <td>{currency(form.values.touristTax)}</td>
+                        <td>{nights}</td>
+                        <td>{currency(touristTax)}</td>
+                        <td>{`${currency(0)} (0%)`}</td>
+                        <td>{currency(touristTax)}</td>
+                      </tr>
+                    )}
                   </tbody>
                 </Table>
               </ScrollArea>
@@ -799,6 +856,10 @@ const Booking: FC<BookingProps> = ({ booking, closeHandler }) => {
                     invoice.end.toDate(),
                     invoice.start.toDate(),
                   );
+
+                  const isLastInvoice = form.values.date?.[1]
+                    ? compareDates(form.values.date[1], invoice.end.toDate())
+                    : false;
 
                   return (
                     <>
@@ -858,26 +919,27 @@ const Booking: FC<BookingProps> = ({ booking, closeHandler }) => {
                                 totalParkingFee={
                                   (form.values.parkingFee / nights) * invoiceNights
                                 }
+                                touristTax={form.values.touristTax ?? 0}
+                                touristTaxTotal={form.values.touristTax * invoiceNights}
                                 totalMinusVat={
                                   ((roomTotalWithoutVat +
-                                    cleaningFeeWithoutVat +
-                                    parkingFeeWithoutVat) /
+                                    parkingFeeWithoutVat +
+                                    touristTax) /
                                     nights) *
-                                  invoiceNights
+                                    invoiceNights +
+                                  (isLastInvoice ? cleaningFeeWithoutVat : 0)
                                 }
                                 totalVat={
-                                  ((roomVat + cleaningFeeVat + parkingFeeVat) / nights) *
-                                  invoiceNights
+                                  ((roomVat + parkingFeeVat) / nights) * invoiceNights +
+                                  (isLastInvoice ? cleaningFeeVat : 0)
                                 }
-                                total={(total / nights) * invoiceNights}
-                                isLastInvoice={
-                                  form.values.date?.[1]
-                                    ? compareDates(
-                                        form.values.date[1],
-                                        invoice.end.toDate(),
-                                      )
-                                    : false
+                                total={
+                                  isLastInvoice
+                                    ? (total / nights) * invoiceNights
+                                    : (total / nights) * invoiceNights -
+                                      form.values.cleaningFee
                                 }
+                                isLastInvoice={isLastInvoice}
                               />
                             }
                             fileName={`${invoice.number} - ${booking.customer.name}.pdf`}

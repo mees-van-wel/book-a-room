@@ -17,6 +17,7 @@ export interface BookingInterface extends NewBookingInterface {
   cleaningFeeVat: number;
   parkingFee: number;
   parkingFeeVat: number;
+  touristTax: number;
   customer: CustomerInterface;
   priceOverride: number;
   invoices: {
@@ -38,6 +39,7 @@ export interface FirestoreBookingInterface {
   cleaningFeeVat: number;
   parkingFee: number;
   parkingFeeVat: number;
+  touristTax: number;
   customer: CustomerInterface;
   priceOverride: number;
   invoices: {
