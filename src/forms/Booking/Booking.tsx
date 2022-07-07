@@ -827,8 +827,8 @@ const Booking: FC<BookingProps> = ({ booking, closeHandler }) => {
                   locale="nl"
                   value={invoicePeriod}
                   onChange={setInvoicePeriod}
-                  minDate={form.values.date[0]}
-                  maxDate={form.values.date[1]}
+                  minDate={new Date(form?.values?.date?.[0].setHours(4))}
+                  maxDate={new Date(form?.values?.date?.[1].setHours(4))}
                   excludeDate={(date) => {
                     for (let i = 0; i < booking?.invoices?.length ?? 0; i++) {
                       const invoice = booking?.invoices?.[i];

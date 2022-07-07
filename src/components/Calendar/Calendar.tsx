@@ -180,8 +180,6 @@ const Calendar: FC<CalendarProps> = ({ events, onEventClick, onClick }) => {
                         dayjs(day).isBetween(event.start, event.end, null, '(]')),
                   );
 
-                  console.log(event);
-
                   return (
                     <td
                       key={day.getDate()}
