@@ -197,7 +197,12 @@ const Calendar: FC<CalendarProps> = ({ events, onEventClick, onClick }) => {
                             style={{
                               cursor: 'pointer',
                               margin: 0,
-                              backgroundColor: '#228be6',
+                              backgroundColor:
+                                !!e.start && !!e.end && compareDates(e.start, day)
+                                  ? '#135b0e'
+                                  : compareDates(e.end, day)
+                                  ? '#7c1313'
+                                  : '#964113',
                               color: 'white',
                               fontSize: 14,
                               textAlign: 'center',
