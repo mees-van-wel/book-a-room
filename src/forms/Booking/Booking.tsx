@@ -375,7 +375,7 @@ const Booking: FC<BookingProps> = ({ booking, closeHandler }) => {
 
       const bookingToSend = {
         ...values,
-        invoices: booking?.invoices,
+        invoices: booking?.invoices ?? [],
         start: date?.[0] && Timestamp.fromDate(date[0]),
         end: date?.[1] && Timestamp.fromDate(date[1]),
         room: room ? JSON.parse(room) : booking && 'room' in booking && booking.room,
