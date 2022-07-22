@@ -838,8 +838,8 @@ const Booking: FC<BookingProps> = ({ booking, closeHandler }) => {
                         const result = dayjs(date).isBetween(
                           start.toDate(),
                           end.toDate(),
-                          null,
-                          '[]',
+                          'day',
+                          '[)',
                         );
                         if (result) return result;
                       }
