@@ -16,7 +16,9 @@ const useFirestoreDocuments = <T>(collectionPath: string, withId?: boolean) => {
   const documents = useMemo<T[] | undefined>(
     () =>
       data?.docs.map((document) =>
-        withId ? { ...document.data(), id: document.id } : document.data(),
+        withId
+          ? { ...document.data(), id: document.id, _ref: document.ref }
+          : document.data(),
       ),
     [data],
   );

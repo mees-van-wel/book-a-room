@@ -4,28 +4,23 @@ import {
   Button,
   Group,
   NumberInput,
-  ScrollArea,
   Select,
   Stepper,
-  Table,
+  Text,
   Textarea,
   TextInput,
 } from '@mantine/core';
 import { DateRangePicker } from '@mantine/dates';
 import { useForm } from '@mantine/hooks';
-import pdf from '@react-pdf/renderer';
 import dayjs from 'dayjs';
 import firebase from 'firebase/compat';
 import { addDoc, collection, deleteDoc, doc, setDoc } from 'firebase/firestore';
 import { FC, useCallback, useEffect, useMemo, useState } from 'react';
 
 import COLLECTIONS from '../../enums/COLLECTIONS';
-import LocalResidenceFooter from '../../footer-local-residence.jpg';
-import LocalResidenceHeader from '../../header-local-residence.jpg';
 import useFirestoreDocuments from '../../hooks/useFirestoreDocuments';
 import { BookingInterface, NewBookingInterface } from '../../interfaces/Booking';
 import { firestore } from '../../lib/firebase';
-import LongStayBredaHeader from '../../logo.jpg';
 import Timestamp = firebase.firestore.Timestamp;
 import { useNotifications } from '@mantine/notifications';
 import isBetween from 'dayjs/plugin/isBetween';
@@ -33,249 +28,20 @@ import isBetween from 'dayjs/plugin/isBetween';
 import { CustomerInterface } from '../../interfaces/Customer';
 import { FireStoreRoomInterface } from '../../interfaces/Room';
 import { SettingsInterface } from '../../interfaces/Settings';
-import currency from '../../utils/currency';
-import getInvoiceNumber from '../../utils/invoiceNumber';
+
 dayjs.extend(isBetween);
 
-const { Document, Page, Text, View, StyleSheet, PDFDownloadLink, Image } = pdf;
-
-const calcVat = (price: number, vat: number) =>
+export const calcVat = (price: number, vat: number) =>
   Math.round((price / (100 + vat)) * vat * 100) / 100;
-const calcTotalWithoutVat = (price: number, vat: number) =>
+export const calcTotalWithoutVat = (price: number, vat: number) =>
   Math.round((price - vat) * 100) / 100;
-const calcNights = (end: Date, start: Date) => dayjs(end).diff(start, 'days');
+export const calcNights = (end: Date, start: Date) => dayjs(end).diff(start, 'days');
 
-const compareDates = (firstDate: Date, secondDate: Date) => {
+export const compareDates = (firstDate: Date, secondDate: Date) => {
   return (
     firstDate.getDate() == secondDate.getDate() &&
     firstDate.getMonth() == secondDate.getMonth() &&
     firstDate.getFullYear() == secondDate.getFullYear()
-  );
-};
-
-const styles = StyleSheet.create({
-  page: {
-    fontSize: 11,
-    flexDirection: 'column',
-  },
-  container: {
-    padding: '16px 32px 32px 32px',
-  },
-  settingsContainer: {
-    alignItems: 'flex-end',
-  },
-  line: {
-    marginVertical: 8,
-    height: 1,
-    backgroundColor: 'black',
-    width: 100,
-  },
-  spacer: {
-    marginVertical: 4,
-  },
-  table: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-  },
-  header: {
-    paddingBottom: 4,
-    marginBottom: 4,
-    borderBottom: '1px solid black',
-  },
-  image: {
-    marginBottom: 10,
-  },
-});
-
-const Receipt = ({
-  room,
-  booking,
-  nights,
-  pricePerNight,
-  settings,
-  totalWithoutVat,
-  vat,
-  vatPercentage,
-  cleaningFee,
-  cleaningFeeVat,
-  cleaningFeeVatPercentage,
-  totalCleaningFee,
-  parkingFee,
-  parkingFeeVat,
-  parkingFeeVatPercentage,
-  totalParkingFee,
-  touristTax,
-  touristTaxTotal,
-  totalNights,
-  total,
-  totalMinusVat,
-  totalVat,
-  isLastInvoice,
-}: {
-  room: FireStoreRoomInterface;
-  booking: FormData;
-  nights: number;
-  pricePerNight: number;
-  settings: SettingsInterface;
-  totalWithoutVat: number;
-  vat: number;
-  vatPercentage: number;
-  cleaningFee: number;
-  cleaningFeeVat: number;
-  cleaningFeeVatPercentage: number;
-  totalCleaningFee: number;
-  parkingFee: number;
-  parkingFeeVat: number;
-  parkingFeeVatPercentage: number;
-  totalParkingFee: number;
-  touristTax: number;
-  touristTaxTotal: number;
-  totalNights: number;
-  total: number;
-  totalMinusVat: number;
-  totalVat: number;
-  isLastInvoice: boolean;
-}) => {
-  return (
-    <Document>
-      <Page size="A4" style={styles.page}>
-        {/*<Image src={LocalResidenceHeader} />*/}
-        <Image src={LongStayBredaHeader} />
-        <View style={styles.container}>
-          <View style={styles.settingsContainer}>
-            <Text>Invoice number: {booking.invoiceNumber}</Text>
-            <Text>Date: {booking.invoiceDate?.toDate().toLocaleDateString('nl-NL')}</Text>
-            <View style={styles.line} />
-            <Text>{settings.companyName}</Text>
-            <Text>
-              {settings.street} {settings.houseNumber}
-            </Text>
-            <Text>
-              {settings.postalCode} {settings.city}
-            </Text>
-            <View style={styles.spacer} />
-            <Text>Email: {settings.email}</Text>
-            <Text>Telephone number: {settings.phoneNumber}</Text>
-            <View style={styles.spacer} />
-            <Text>Chamber of Commerce number: {settings.kvkNumber}</Text>
-            <Text>VAT number: {settings.btwNumber}</Text>
-            <View style={styles.spacer} />
-            <Text>Swift (BIC) code: {settings.bicCode}</Text>
-            <Text>IBAN: {settings.iban}</Text>
-          </View>
-          <View>
-            <Text>{booking.customer.name}</Text>
-            <Text>{booking.customer.secondName}</Text>
-            <Text>
-              {booking.customer.street} {booking.customer.houseNumber}
-            </Text>
-            <Text>
-              {booking.customer.postalCode} {booking.customer.city}
-            </Text>
-            <View style={styles.spacer} />
-            <Text>Email: {booking.customer.email}</Text>
-            <Text>Telephone number: {booking.customer.phoneNumber}</Text>
-            <View style={styles.spacer} />
-            <Text>{booking.customer.extra}</Text>
-            <Text>{booking.extraOne}</Text>
-            <Text>{booking.extraTwo}</Text>
-            <View style={styles.spacer} />
-          </View>
-          <View style={styles.table}>
-            <View>
-              <Text style={styles.header}>Service</Text>
-              <Text>{room.name}</Text>
-              {cleaningFee && isLastInvoice ? <Text>Cleaning fee</Text> : <Text />}
-              {parkingFee ? <Text>Parking costs</Text> : <Text />}
-              {touristTax ? <Text>Tourist tax</Text> : <Text />}
-            </View>
-            <View>
-              <Text style={styles.header}>Unit price</Text>
-              <Text>{currency(pricePerNight)}</Text>
-              {cleaningFee && isLastInvoice ? (
-                <Text>{currency(cleaningFee)}</Text>
-              ) : (
-                <Text />
-              )}
-              {parkingFee ? <Text>{currency(parkingFee)}</Text> : <Text />}
-              {touristTax ? <Text>{currency(touristTax)}</Text> : <Text />}
-            </View>
-            <View>
-              <Text style={styles.header}>Amount</Text>
-              <Text>{`${nights} (${booking.date?.[0].toLocaleDateString(
-                'nl-NL',
-              )} - ${booking.date?.[1].toLocaleDateString('nl-NL')})`}</Text>
-              {cleaningFee && isLastInvoice ? <Text>1</Text> : <Text />}
-              {parkingFee ? <Text>{nights}</Text> : <Text />}
-              {touristTax ? <Text>{nights}</Text> : <Text />}
-            </View>
-            <View>
-              <Text style={styles.header}>Total excluding VAT</Text>
-              <Text>{currency(totalWithoutVat)}</Text>
-              {cleaningFee && isLastInvoice ? (
-                <Text>{currency(totalCleaningFee - cleaningFeeVat)}</Text>
-              ) : (
-                <Text />
-              )}
-              {parkingFee ? (
-                <Text>{currency(totalParkingFee - parkingFeeVat)}</Text>
-              ) : (
-                <Text />
-              )}
-              {touristTax ? <Text>{currency(touristTaxTotal)}</Text> : <Text />}
-            </View>
-            <View>
-              <Text style={styles.header}>VAT</Text>
-              <Text>{`${currency(vat)} (${vatPercentage}%${
-                vatPercentage == 0 ? ' / Verlegd' : ''
-              })`}</Text>
-              {cleaningFee && isLastInvoice ? (
-                <Text>{`${currency(cleaningFeeVat)} (${cleaningFeeVatPercentage}%${
-                  cleaningFeeVatPercentage == 0 ? ' / Verlegd' : ''
-                })`}</Text>
-              ) : (
-                <Text />
-              )}
-              {parkingFee ? (
-                <Text>{`${currency(parkingFeeVat)} (${parkingFeeVatPercentage}%${
-                  parkingFeeVatPercentage == 0 ? ' / Verlegd' : ''
-                })`}</Text>
-              ) : (
-                <Text />
-              )}
-              {touristTax ? <Text>{`${currency(0)} (0%)`}</Text> : <Text />}
-            </View>
-            <View>
-              <Text style={styles.header}>Total</Text>
-              <Text>{currency(totalNights)}</Text>
-              {cleaningFee && isLastInvoice ? (
-                <Text>{currency(totalCleaningFee)}</Text>
-              ) : (
-                <Text />
-              )}
-              {parkingFee ? <Text>{currency(totalParkingFee)}</Text> : <Text />}
-              {touristTax ? <Text>{currency(touristTaxTotal)}</Text> : <Text />}
-            </View>
-          </View>
-          <View style={styles.spacer} />
-          <Text>Total excluding VAT: {currency(totalMinusVat)}</Text>
-          <Text>Total VAT: {currency(totalVat)}</Text>
-          <Text>
-            Total:{' '}
-            {currency(
-              totalNights +
-                (isLastInvoice && totalCleaningFee ? totalCleaningFee : 0) +
-                (totalParkingFee ?? 0) +
-                (touristTaxTotal ?? 0),
-            )}
-          </Text>
-          <View style={styles.spacer} />
-          <View style={styles.spacer} />
-          <Text>We kindly request that you transfer the amount due within 14 days.</Text>
-        </View>
-        {/*<Image src={LocalResidenceFooter} />*/}
-      </Page>
-    </Document>
   );
 };
 
@@ -464,65 +230,6 @@ const Booking: FC<BookingProps> = ({ booking, closeHandler }) => {
     }
   }, [rooms, customers]);
 
-  const roomPrice = useMemo(
-    () => form.values.priceOverride ?? room?.price,
-    [form.values.priceOverride, room],
-  );
-
-  const roomTotal = useMemo(
-    () => Math.round(roomPrice * nights * 100) / 100,
-    [roomPrice, nights],
-  );
-
-  const roomVat = useMemo(
-    () => calcVat(roomTotal, form.values.btw),
-    [roomTotal, form.values.btw],
-  );
-
-  const roomTotalWithoutVat = useMemo(
-    () => calcTotalWithoutVat(roomTotal, roomVat),
-    [roomTotal, roomVat],
-  );
-
-  const roomWithoutVat = useMemo(
-    () => Math.round((roomTotalWithoutVat / nights) * 100) / 100,
-    [roomTotalWithoutVat, nights],
-  );
-
-  const cleaningFeeVat = useMemo(
-    () => calcVat(form.values.cleaningFee ?? 0, form.values.cleaningFeeVat),
-    [form.values.cleaningFee, form.values.cleaningFeeVat],
-  );
-
-  const cleaningFeeWithoutVat = useMemo(
-    () => calcTotalWithoutVat(form.values.cleaningFee ?? 0, cleaningFeeVat),
-    [form.values.cleaningFee, cleaningFeeVat],
-  );
-
-  const parkingFeeVat = useMemo(
-    () => calcVat(form.values.parkingFee ?? 0, form.values.parkingFeeVat),
-    [form.values.parkingFee, form.values.parkingFeeVat],
-  );
-
-  const parkingFeeWithoutVat = useMemo(
-    () => calcTotalWithoutVat(form.values.parkingFee ?? 0, parkingFeeVat),
-    [form.values.parkingFee, parkingFeeVat],
-  );
-
-  const touristTax = useMemo(
-    () => Math.round((form.values.touristTax ?? 0) * nights * 100) / 100,
-    [form.values.touristTax, nights],
-  );
-
-  const total = useMemo(
-    () =>
-      roomTotal +
-      (form.values.cleaningFee ?? 0) +
-      (form.values.parkingFee ?? 0) +
-      (touristTax ?? 0),
-    [roomTotal, form.values.cleaningFee, form.values.parkingFee, touristTax],
-  );
-
   const createInvoice = useCallback(async () => {
     if (settings && invoicePeriod?.[1])
       await setDoc(doc(firestore, COLLECTIONS.SETTINGS, settings.id), {
@@ -630,8 +337,8 @@ const Booking: FC<BookingProps> = ({ booking, closeHandler }) => {
           />
           <Select
             required
-            label="Btw percentage"
-            placeholder="Btw percentage"
+            label="BTW percentage"
+            placeholder="BTW percentage"
             defaultValue="9"
             data={[
               {
@@ -660,8 +367,8 @@ const Booking: FC<BookingProps> = ({ booking, closeHandler }) => {
           />
           {!!form.values.cleaningFee && (
             <Select
-              label="Schoonmaakkosten Btw percentage"
-              placeholder="Schoonmaakkosten Btw percentage"
+              label="Schoonmaakkosten BTW percentage"
+              placeholder="Schoonmaakkosten BTW percentage"
               defaultValue="21"
               data={[
                 {
@@ -687,8 +394,8 @@ const Booking: FC<BookingProps> = ({ booking, closeHandler }) => {
           />
           {!!form.values.parkingFee && (
             <Select
-              label="Parkeerkosten Btw percentage"
-              placeholder="Parkeerkosten Btw percentage"
+              label="Parkeerkosten BTW percentage"
+              placeholder="Parkeerkosten BTW percentage"
               defaultValue="21"
               data={[
                 {
@@ -752,77 +459,8 @@ const Booking: FC<BookingProps> = ({ booking, closeHandler }) => {
           !!form.values.date[0] &&
           !!form.values.date[1] && (
             <Stepper.Step label="Bon" allowStepSelect={false}>
-              {form.values.notes && <Text>Opmerkingen: {form.values.notes}</Text>}
-              <ScrollArea
-                style={{
-                  maxWidth: '75vw',
-                }}
-              >
-                <Table
-                  style={{
-                    minWidth: 600,
-                  }}
-                >
-                  <thead>
-                    <tr>
-                      <th>Dienst</th>
-                      <th>Prijs per stuk</th>
-                      <th>Aantal</th>
-                      <th>Totaal excl. Btw</th>
-                      <th>BTW</th>
-                      <th>Totaal</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr>
-                      <td>{room.name}</td>
-                      <td>{currency(roomWithoutVat)}</td>
-                      <td>{nights}</td>
-                      <td>{currency(roomTotalWithoutVat)}</td>
-                      <td>{`${currency(roomVat)} (${form.values.btw}%${
-                        form.values.btw == 0 ? ' / Verlegd' : ''
-                      })`}</td>
-                      <td>{currency(roomTotal)}</td>
-                    </tr>
-                    {!!form.values.cleaningFee && (
-                      <tr>
-                        <td>Schoonmaakkosten</td>
-                        <td>{currency(cleaningFeeWithoutVat)}</td>
-                        <td>1</td>
-                        <td>{currency(cleaningFeeWithoutVat)}</td>
-                        <td>{`${currency(cleaningFeeVat)} (${
-                          form.values.cleaningFeeVat
-                        }%${form.values.cleaningFeeVat == 0 ? ' / Verlegd' : ''})`}</td>
-                        <td>{currency(form.values.cleaningFee)}</td>
-                      </tr>
-                    )}
-                    {!!form.values.parkingFee && (
-                      <tr>
-                        <td>Parkeerkosten</td>
-                        <td>{currency(parkingFeeWithoutVat / nights)}</td>
-                        <td>{nights}</td>
-                        <td>{currency(parkingFeeWithoutVat)}</td>
-                        <td>{`${currency(parkingFeeVat)} (${form.values.parkingFeeVat}%${
-                          form.values.parkingFeeVat == 0 ? ' / Verlegd' : ''
-                        })`}</td>
-                        <td>{currency(form.values.parkingFee)}</td>
-                      </tr>
-                    )}
-                    {!!form.values.touristTax && (
-                      <tr>
-                        <td>Toeristenbelasting</td>
-                        <td>{currency(form.values.touristTax)}</td>
-                        <td>{nights}</td>
-                        <td>{currency(touristTax)}</td>
-                        <td>{`${currency(0)} (0%)`}</td>
-                        <td>{currency(touristTax)}</td>
-                      </tr>
-                    )}
-                  </tbody>
-                </Table>
-              </ScrollArea>
-              <p>{`Totaal: ${currency(total)}`}</p>
-              <Group>
+              {form.values.notes && <Text>{form.values.notes}</Text>}
+              <Group mt="md">
                 <DateRangePicker
                   placeholder="Factureer periode"
                   locale="nl"
@@ -858,10 +496,6 @@ const Booking: FC<BookingProps> = ({ booking, closeHandler }) => {
                     invoice.start.toDate(),
                   );
 
-                  const isLastInvoice = form.values.date?.[1]
-                    ? compareDates(form.values.date[1], invoice.end.toDate())
-                    : false;
-
                   return (
                     <>
                       <div
@@ -887,69 +521,10 @@ const Booking: FC<BookingProps> = ({ booking, closeHandler }) => {
                             marginTop: 8,
                           }}
                         >
-                          <PDFDownloadLink
-                            document={
-                              <Receipt
-                                settings={settings}
-                                booking={{
-                                  ...form.values,
-                                  invoiceNumber: invoice.number,
-                                  invoiceDate: invoice.date,
-                                  customer: booking.customer,
-                                  date: [invoice.start.toDate(), invoice.end.toDate()],
-                                }}
-                                room={room}
-                                nights={calcNights(
-                                  invoice.end.toDate(),
-                                  invoice.start.toDate(),
-                                )}
-                                pricePerNight={roomWithoutVat}
-                                totalWithoutVat={
-                                  (roomTotalWithoutVat / nights) * invoiceNights
-                                }
-                                vat={(roomVat / nights) * invoiceNights}
-                                vatPercentage={form.values.btw}
-                                totalNights={(roomTotal / nights) * invoiceNights}
-                                cleaningFee={cleaningFeeWithoutVat}
-                                cleaningFeeVat={cleaningFeeVat}
-                                cleaningFeeVatPercentage={form.values.cleaningFeeVat}
-                                totalCleaningFee={form.values.cleaningFee}
-                                parkingFee={parkingFeeWithoutVat / nights}
-                                parkingFeeVat={(parkingFeeVat / nights) * invoiceNights}
-                                parkingFeeVatPercentage={form.values.parkingFeeVat}
-                                totalParkingFee={
-                                  (form.values.parkingFee / nights) * invoiceNights
-                                }
-                                touristTax={form.values.touristTax ?? 0}
-                                touristTaxTotal={form.values.touristTax * invoiceNights}
-                                totalMinusVat={
-                                  ((roomTotalWithoutVat +
-                                    parkingFeeWithoutVat +
-                                    touristTax) /
-                                    nights) *
-                                    invoiceNights +
-                                  (isLastInvoice ? cleaningFeeWithoutVat : 0)
-                                }
-                                totalVat={
-                                  ((roomVat + parkingFeeVat) / nights) * invoiceNights +
-                                  (isLastInvoice ? cleaningFeeVat : 0)
-                                }
-                                total={
-                                  isLastInvoice
-                                    ? (total / nights) * invoiceNights
-                                    : (total / nights) * invoiceNights -
-                                      form.values.cleaningFee
-                                }
-                                isLastInvoice={isLastInvoice}
-                              />
-                            }
-                            fileName={`${invoice.number} - ${booking.customer.name}.pdf`}
-                          >
-                            <Button>Download PDF</Button>
-                          </PDFDownloadLink>
-                          <Button color="red" onClick={() => deleteInvoice(index)}>
+                          <Button>Ga naar factuur</Button>
+                          {/* <Button color="red" onClick={() => deleteInvoice(index)}>
                             Verwijderen
-                          </Button>
+                          </Button> */}
                         </Group>
                       </div>
                       <br />

@@ -3,6 +3,7 @@ import Page from './layouts/Page';
 import Auth from './screens/Auth';
 import Bookings from './screens/Bookings';
 import Customers from './screens/Customers/Customers';
+import { Invoices } from './screens/Invoices';
 import NotFoundError from './screens/NotFoundError';
 import Rooms from './screens/Rooms';
 import Settings from './screens/Settings';
@@ -24,6 +25,12 @@ const ROUTES = {
     path: '/customers',
     label: 'Klanten',
     element: Customers,
+    layout: Dashboard,
+  },
+  INVOICES: {
+    path: '/invoices',
+    label: 'Facturen',
+    element: Invoices,
     layout: Dashboard,
   },
   SETTINGS: {

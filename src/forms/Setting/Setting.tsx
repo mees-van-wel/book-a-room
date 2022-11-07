@@ -109,8 +109,8 @@ const Setting: FC<FormProps> = ({ settings }) => {
           />
           <TextInput
             required
-            label="Btw-nummer"
-            placeholder="Btw-nummer"
+            label="BTW-nummer"
+            placeholder="BTW-nummer"
             {...form.getInputProps('btwNumber')}
           />
         </Group>
