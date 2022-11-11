@@ -1,16 +1,14 @@
-import { FC } from 'react';
+import { ReactNode } from "react";
 
-const Page: FC = ({ children }) => (
+export const Page = ({ children }: { children: ReactNode }) => (
   <div
     style={{
-      display: 'flex',
-      height: '100vh',
-      justifyContent: 'center',
-      alignItems: 'center',
+      display: "flex",
+      height: "100vh",
+      justifyContent: "center",
+      alignItems: "center",
     }}
   >
     {children}
   </div>
 );
-
-export default Page;

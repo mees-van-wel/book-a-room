@@ -1,17 +1,16 @@
-import { Button, Group, Loader, Modal, Table, Title } from '@mantine/core';
-import { FC, useState } from 'react';
+import { Button, Group, Loader, Modal, Table, Title } from "@mantine/core";
+import { ReactElement, useState } from "react";
 
-import COLLECTIONS from '../../enums/COLLECTIONS';
-import Customer from '../../forms/Customer/Customer';
-import useFirestoreDocuments from '../../hooks/useFirestoreDocuments';
-import { CustomerInterface } from '../../interfaces/Customer';
+import { Collection } from "../../enums/collection.enum";
+import Customer from "../../forms/Customer/Customer";
+import useFirestoreDocuments from "../../hooks/useFirestoreDocuments";
+import { CustomerInterface } from "../../interfaces/Customer";
+import Dashboard from "../../layouts/Dashboard";
 
-const Customers: FC = () => {
+export const Customers = () => {
   const [customer, setCustomer] = useState<CustomerInterface | true>();
-  const { documents: customers, loading } = useFirestoreDocuments<CustomerInterface>(
-    COLLECTIONS.CUSTOMERS,
-    true,
-  );
+  const { documents: customers, loading } =
+    useFirestoreDocuments<CustomerInterface>(Collection.Customers, true);
 
   if (loading) return <Loader />;
 
@@ -44,13 +43,15 @@ const Customers: FC = () => {
             </thead>
             <tbody>
               {customers
-                .sort((a, b) => (a.name > b.name ? 1 : b.name > a.name ? -1 : 0))
+                .sort((a, b) =>
+                  a.name > b.name ? 1 : b.name > a.name ? -1 : 0
+                )
                 .map((customer) => (
                   <tr
                     onClick={() => setCustomer(customer)}
                     key={customer.name}
                     style={{
-                      cursor: 'pointer',
+                      cursor: "pointer",
                     }}
                   >
                     <td>{customer.name}</td>
@@ -67,4 +68,4 @@ const Customers: FC = () => {
   );
 };
 
-export default Customers;
+Customers.getLayout = (page: ReactElement) => <Dashboard>{page}</Dashboard>;

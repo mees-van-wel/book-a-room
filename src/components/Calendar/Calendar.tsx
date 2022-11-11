@@ -1,22 +1,16 @@
-import '@fullcalendar/react/dist/vdom';
+import { Button, Group } from "@mantine/core";
+import { DatePicker, getMonthDays } from "@mantine/dates";
+import { useLocalStorage } from "@mantine/hooks";
+import dayjs from "dayjs";
+import isBetween from "dayjs/plugin/isBetween";
+import { FC, useEffect, useMemo, useState } from "react";
+import { Collection } from "../../enums/collection.enum";
+import useFirestoreDocuments from "../../hooks/useFirestoreDocuments";
+import { CalendarEvent } from "../../interfaces/calendarEvent.interface";
+import { RoomInterface } from "../../interfaces/Room";
+import { calcNights, overlapDates } from "../../screens/Bookings/Booking";
 
-import { EventApi, EventInput } from '@fullcalendar/react';
-import { Button, Group } from '@mantine/core';
-import { DatePicker, getMonthDays } from '@mantine/dates';
-import dayjs from 'dayjs';
-import isBetween from 'dayjs/plugin/isBetween';
 dayjs.extend(isBetween);
-import { FC, useMemo, useState } from 'react';
-
-import COLLECTIONS from '../../enums/COLLECTIONS';
-import useFirestoreDocuments from '../../hooks/useFirestoreDocuments';
-import { RoomInterface } from '../../interfaces/Room';
-
-interface CalendarProps {
-  events: EventInput[];
-  onClick?: (start: Date, end: Date) => void;
-  onEventClick?: (event: EventApi) => void;
-}
 
 const now = new Date();
 
@@ -28,108 +22,142 @@ const compareDates = (firstDate: Date, secondDate?: Date) => {
   );
 };
 
-const Calendar: FC<CalendarProps> = ({ events, onEventClick, onClick }) => {
-  const [date, setDate] = useState(now);
-  const firstDayOfWeek = 'monday';
-  const { documents: rooms } = useFirestoreDocuments<RoomInterface>(COLLECTIONS.ROOMS);
+interface CalendarProps {
+  lsKey: string;
+  showAll?: boolean;
+  events: CalendarEvent[] | (() => Promise<CalendarEvent[]>);
+  onNewClick?: () => void;
+  onEventClick?: (eventId: string) => void;
+}
+
+const Calendar: FC<CalendarProps> = ({
+  lsKey,
+  showAll,
+  events: eventsFn,
+  onEventClick,
+  onNewClick,
+}) => {
+  const [events, setEvents] = useState<CalendarEvent[]>(
+    Array.isArray(eventsFn) ? eventsFn : []
+  );
+  const [dateString, setDate] = useLocalStorage<string>({
+    key: lsKey,
+    defaultValue: now.toISOString(),
+  });
+
+  const date = useMemo(() => new Date(dateString), [dateString]);
+
+  const firstDayOfWeek = "monday";
+  const { documents: allRooms } = useFirestoreDocuments<RoomInterface>(
+    Collection.Rooms
+  );
 
   const days = getMonthDays(date, firstDayOfWeek);
 
   const currentWeek = useMemo(
-    () => days.find((daySet) => !!daySet.find((day) => compareDates(day, date))),
-    [days, date],
+    () =>
+      days.find((daySet) => !!daySet.find((day) => compareDates(day, date))),
+    [days, date]
   );
 
-  // const rooms = useMemo(() => {
-  //   const r: string[] = [];
-  //   events.forEach((event) => {
-  //     if (
-  //       !r.includes(event.roomName) &&
-  //       // @ts-ignore
-  //       (compareDates(currentWeek[0], event.start) ||
-  //         // @ts-ignore
-  //         dayjs(event.end).isBetween(
-  //           // @ts-ignore
-  //           currentWeek[0],
-  //           // @ts-ignore
-  //           currentWeek[currentWeek.length - 1],
-  //           null,
-  //           '(]',
-  //         ) ||
-  //         // @ts-ignore
-  //         dayjs(event.start).isBetween(
-  //           // @ts-ignore
-  //           currentWeek[0],
-  //           // @ts-ignore
-  //           currentWeek[currentWeek.length - 1],
-  //           null,
-  //           '(]',
-  //         ))
-  //     )
-  //       r.push(event.roomName);
-  //   });
-  //   return r;
-  // }, [events, currentWeek]);
+  const rooms = useMemo(
+    () =>
+      showAll
+        ? allRooms
+        : allRooms?.reduce<RoomInterface[]>((array, current) => {
+            if (
+              currentWeek &&
+              events.some(
+                (event) =>
+                  current.name === event.roomName &&
+                  overlapDates(
+                    [currentWeek[0], currentWeek[currentWeek.length - 1]],
+                    [event.start, event.end]
+                  )
+              )
+            )
+              array.push(current);
+            return array;
+          }, []),
+    [showAll, allRooms, currentWeek, events]
+  );
 
   const previousWeek = () => {
     const cloneDate = new Date(date);
-    setDate(new Date(cloneDate.setDate(date.getDate() - 7)));
+    setDate(new Date(cloneDate.setDate(date.getDate() - 7)).toISOString());
   };
 
   const nextWeek = () => {
     const cloneDate = new Date(date);
-    setDate(new Date(cloneDate.setDate(date.getDate() + 7)));
+    setDate(new Date(cloneDate.setDate(date.getDate() + 7)).toISOString());
   };
+
+  useEffect(() => {
+    if (!Array.isArray(eventsFn)) eventsFn().then(setEvents);
+  }, []);
 
   return (
     <div>
       <div
+        className="no-print"
         style={{
-          display: 'flex',
+          display: "flex",
           padding: 8,
-          boxShadow: '0px 5px 15px -4px rgba(0,0,0,0.67)',
+          boxShadow: "0px 5px 15px -4px rgba(0,0,0,0.67)",
           borderRadius: 8,
-          backgroundColor: '#228be6',
+          backgroundColor: "#343a40",
         }}
       >
         <div
           style={{
-            width: '30%',
+            width: "30%",
           }}
         >
-          {/*@ts-ignore*/}
-          <Button onClick={onClick} variant="default">
-            Nieuwe boeking
-          </Button>
+          {onNewClick && (
+            <Button onClick={onNewClick} variant="default">
+              Nieuwe boeking
+            </Button>
+          )}
         </div>
         <Group position="center">
-          <Button onClick={previousWeek} variant="default">
-            Vorige week
-          </Button>
+          <Button.Group>
+            <Button onClick={previousWeek} variant="default">
+              Vorige week
+            </Button>
+            <Button
+              onClick={() => {
+                setDate(now.toISOString());
+              }}
+              variant="default"
+            >
+              Deze week
+            </Button>
+            <Button onClick={nextWeek} variant="default">
+              Volgende week
+            </Button>
+          </Button.Group>
           <DatePicker
             locale="nl"
             value={date}
-            // @ts-ignore
-            onChange={setDate}
+            onChange={(value) => {
+              value && setDate(value.toISOString());
+            }}
             clearable={false}
             required
           />
-          <Button onClick={nextWeek} variant="default">
-            Volgende week
-          </Button>
         </Group>
       </div>
       <div
         style={{
-          overflow: 'auto',
-          maxHeight: 'calc(100vh - 179px)',
+          overflow: "auto",
+          maxHeight: "calc(100vh - 179px)",
         }}
       >
         <table
           style={{
-            width: '100%',
-            borderCollapse: 'collapse',
-            tableLayout: 'fixed',
+            width: "100%",
+            borderCollapse: "collapse",
+            tableLayout: "fixed",
           }}
         >
           <tr>
@@ -138,17 +166,17 @@ const Calendar: FC<CalendarProps> = ({ events, onEventClick, onClick }) => {
               <th
                 key={day.getDate()}
                 style={{
-                  textAlign: 'center',
+                  textAlign: "center",
                   padding: 8,
-                  whiteSpace: 'nowrap',
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis',
+                  whiteSpace: "nowrap",
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
                 }}
               >
-                {day.toLocaleDateString('nl-NL', {
-                  weekday: 'short',
-                  day: 'numeric',
-                  month: 'long',
+                {day.toLocaleDateString("nl-NL", {
+                  weekday: "short",
+                  day: "numeric",
+                  month: "long",
                 })}
               </th>
             ))}
@@ -159,12 +187,12 @@ const Calendar: FC<CalendarProps> = ({ events, onEventClick, onClick }) => {
               <tr
                 key={name}
                 style={{
-                  borderTop: 'solid gray 1px',
+                  borderTop: "solid gray 1px",
                 }}
               >
                 <td
                   style={{
-                    borderRight: 'solid gray 1px',
+                    borderRight: "solid gray 1px",
                     padding: 8,
                   }}
                 >
@@ -174,51 +202,76 @@ const Calendar: FC<CalendarProps> = ({ events, onEventClick, onClick }) => {
                   const event = events.filter(
                     (event) =>
                       name === event.roomName &&
-                      // @ts-ignore
                       (compareDates(day, event.start) ||
-                        // @ts-ignore
-                        dayjs(day).isBetween(event.start, event.end, null, '(]')),
+                        dayjs(day).isBetween(
+                          event.start,
+                          event.end,
+                          null,
+                          "(]"
+                        ))
                   );
 
                   return (
                     <td
                       key={day.getDate()}
                       style={{
-                        verticalAlign: 'top',
+                        verticalAlign: "top",
                       }}
                     >
-                      {!!event.length &&
-                        event.map((e, i) => (
-                          // eslint-disable-next-line jsx-a11y/click-events-have-key-events,jsx-a11y/no-noninteractive-element-interactions
-                          <p
-                            key={i}
-                            // @ts-ignore
-                            onClick={() => onEventClick(e)}
-                            style={{
-                              cursor: 'pointer',
-                              margin: 0,
-                              backgroundColor:
-                                !!e.start && !!e.end && compareDates(e.start, day)
-                                  ? '#135b0e'
-                                  : compareDates(e.end, day)
-                                  ? '#7c1313'
-                                  : '#964113',
-                              color: 'white',
-                              fontSize: 14,
-                              textAlign: 'center',
-                              marginLeft: -1,
-                              marginRight: -1,
-                              marginTop: 8,
-                              marginBottom: 8,
-                              padding: '4px 8px',
-                              whiteSpace: 'nowrap',
-                              overflow: 'hidden',
-                              textOverflow: 'ellipsis',
-                            }}
-                          >
-                            {e.title}
-                          </p>
-                        ))}
+                      <div
+                        style={{
+                          display: "flex",
+                        }}
+                      >
+                        {!!event.length &&
+                          event.map((e, i) => {
+                            const isOne = calcNights(e.end, e.start) === 0;
+                            const isStart = compareDates(e.start, day);
+                            const isEnd = compareDates(e.end, day);
+
+                            return (
+                              <p
+                                key={i}
+                                onClick={() =>
+                                  onEventClick && onEventClick(e.id)
+                                }
+                                style={{
+                                  cursor: onEventClick ? "pointer" : undefined,
+                                  borderTopLeftRadius: isStart ? 16 : 0,
+                                  borderBottomLeftRadius: isStart ? 16 : 0,
+                                  borderTopRightRadius: isEnd ? 16 : 0,
+                                  borderBottomRightRadius: isEnd ? 16 : 0,
+                                  background: isOne
+                                    ? "#1971c2"
+                                    : isStart
+                                    ? "linear-gradient(90deg, hsla(131, 54%, 40%, 1) 25%, hsla(209, 77%, 43%, 1) 100%)"
+                                    : isEnd
+                                    ? "linear-gradient(90deg, hsla(209, 77%, 43%, 1) 0%, hsla(0, 74%, 54%, 1) 75%)"
+                                    : "#1971c2",
+                                  color: "white",
+                                  fontSize: 14,
+                                  textAlign: "center",
+                                  width: "calc(50% - 4px)",
+                                  marginLeft: isStart ? "auto" : -1,
+                                  flexGrow: isOne
+                                    ? 1
+                                    : isStart || isEnd
+                                    ? 0
+                                    : 1,
+                                  marginRight: -1,
+                                  marginTop: 8,
+                                  marginBottom: 8,
+                                  padding: "4px 8px",
+                                  whiteSpace: "nowrap",
+                                  overflow: "hidden",
+                                  textOverflow: "ellipsis",
+                                }}
+                              >
+                                {e.title}
+                              </p>
+                            );
+                          })}
+                      </div>
                     </td>
                   );
                 })}

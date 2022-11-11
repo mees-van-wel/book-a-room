@@ -1,48 +1,54 @@
-import { Button, Loader, Paper, PasswordInput, TextInput, Title } from '@mantine/core';
-import { useForm } from '@mantine/hooks';
-import { useNotifications } from '@mantine/notifications';
-import { signInWithEmailAndPassword } from 'firebase/auth';
-import { useCallback, useEffect } from 'react';
-import { useAuthState } from 'react-firebase-hooks/auth';
-import { useNavigate } from 'react-router-dom';
+import {
+  Button,
+  Loader,
+  Paper,
+  PasswordInput,
+  TextInput,
+  Title,
+} from "@mantine/core";
+import { useForm } from "@mantine/form";
+import { showNotification } from "@mantine/notifications";
+import { Page } from "@react-pdf/renderer";
+import { signInWithEmailAndPassword } from "firebase/auth";
+import { useRouter } from "next/router";
+import { ReactElement, useCallback, useEffect } from "react";
+import { useAuthState } from "react-firebase-hooks/auth";
+import { NextPageWithLayout } from "../../../pages/_app";
+import { auth } from "../../lib/firebase";
+import { Route } from "../../enums/route.enum";
 
-import Page from '../../layouts/Page';
-import { auth } from '../../lib/firebase';
-import ROUTES from '../../ROUTES';
+interface FormValues {
+  email: string;
+  password: string;
+}
 
-const Auth = () => {
+export const Auth: NextPageWithLayout = () => {
   const [user, loading] = useAuthState(auth);
-  const notifications = useNotifications();
-  const navigate = useNavigate();
-  const form = useForm({
+  const router = useRouter();
+  const form = useForm<FormValues>({
     initialValues: {
-      email: '',
-      password: '',
+      email: "",
+      password: "",
     },
   });
 
   useEffect(() => {
-    if (!loading && !!user) navigate(ROUTES.BOOKINGS.path);
-  }, [loading, user]);
+    if (!loading && !!user) router.replace(Route.Bookings);
+  }, [loading, router, user]);
 
-  const submitHandler = useCallback(async (values) => {
+  const submitHandler = useCallback(async (values: FormValues) => {
     try {
       await signInWithEmailAndPassword(auth, values.email, values.password);
     } catch (e) {
-      notifications.showNotification({
-        color: 'red',
-        title: 'Inlog fout',
-        message: 'Ongeldig e-mailadres of wachtwoord',
+      showNotification({
+        color: "red",
+        title: "Inlog fout",
+        message: "Ongeldig e-mailadres of wachtwoord",
       });
     }
   }, []);
 
-  if (loading || (!loading && !!user))
-    return (
-      <Page>
-        <Loader />
-      </Page>
-    );
+  if (loading || (!loading && !!user)) return <Loader />;
 
   return (
     <Paper p="md" shadow="md" radius="md" withBorder>
@@ -60,7 +66,7 @@ const Auth = () => {
           name="username"
           id="username"
           placeholder="E-mail"
-          {...form.getInputProps('email')}
+          {...form.getInputProps("email")}
         />
         <PasswordInput
           required
@@ -68,7 +74,7 @@ const Auth = () => {
           name="password"
           id="password"
           placeholder="Wachtwoord"
-          {...form.getInputProps('password')}
+          {...form.getInputProps("password")}
         />
         <Button type="submit" mt={16}>
           Inloggen
@@ -77,4 +83,5 @@ const Auth = () => {
     </Paper>
   );
 };
-export default Auth;
+
+Auth.getLayout = (page: ReactElement) => <Page>{page}</Page>;

@@ -1,17 +1,19 @@
-import { Button, Group, Loader, Modal, Table, Title } from '@mantine/core';
-import { FC, useState } from 'react';
+import { Button, Group, Loader, Modal, Table, Title } from "@mantine/core";
+import { ReactElement, useState } from "react";
+import { NextPageWithLayout } from "../../../pages/_app";
 
-import COLLECTIONS from '../../enums/COLLECTIONS';
-import Room from '../../forms/Room';
-import useFirestoreDocuments from '../../hooks/useFirestoreDocuments';
-import { RoomInterface } from '../../interfaces/Room';
-import currency from '../../utils/currency';
+import { Collection } from "../../enums/collection.enum";
+import Room from "../../forms/Room";
+import useFirestoreDocuments from "../../hooks/useFirestoreDocuments";
+import { RoomInterface } from "../../interfaces/Room";
+import Dashboard from "../../layouts/Dashboard";
+import currency from "../../utils/currency";
 
-const Rooms: FC = () => {
+export const Rooms: NextPageWithLayout = () => {
   const [room, setRoom] = useState<RoomInterface | true>();
   const { documents: rooms, loading } = useFirestoreDocuments<RoomInterface>(
-    COLLECTIONS.ROOMS,
-    true,
+    Collection.Rooms,
+    true
   );
 
   if (loading) return <Loader />;
@@ -22,7 +24,10 @@ const Rooms: FC = () => {
   return (
     <>
       <Modal opened={!!room} onClose={closeHandler} title="Kamer">
-        <Room room={room === true ? undefined : room} closeHandler={closeHandler} />
+        <Room
+          room={room === true ? undefined : room}
+          closeHandler={closeHandler}
+        />
       </Modal>
 
       <div>
@@ -40,13 +45,15 @@ const Rooms: FC = () => {
             </thead>
             <tbody>
               {rooms
-                .sort((a, b) => (a.name > b.name ? 1 : b.name > a.name ? -1 : 0))
+                .sort((a, b) =>
+                  a.name > b.name ? 1 : b.name > a.name ? -1 : 0
+                )
                 .map((room) => (
                   <tr
                     onClick={() => setRoom(room)}
                     key={room.name}
                     style={{
-                      cursor: 'pointer',
+                      cursor: "pointer",
                     }}
                   >
                     <td>{room.name}</td>
@@ -61,4 +68,4 @@ const Rooms: FC = () => {
   );
 };
 
-export default Rooms;
+Rooms.getLayout = (page: ReactElement) => <Dashboard>{page}</Dashboard>;

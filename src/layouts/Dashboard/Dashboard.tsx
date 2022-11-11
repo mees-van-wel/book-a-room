@@ -2,49 +2,45 @@ import {
   Anchor,
   AppShell,
   Burger,
-  Button,
-  ColorScheme,
-  Group,
   Header,
   Loader,
   MediaQuery,
   Navbar,
+  NavLink,
+  Stack,
   Text,
   Title,
   useMantineTheme,
-} from '@mantine/core';
-import { useLocalStorage } from '@mantine/hooks';
-import { signOut } from 'firebase/auth';
-import { FC, useEffect, useMemo, useState } from 'react';
-import { useAuthState } from 'react-firebase-hooks/auth';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
+} from "@mantine/core";
+import { signOut } from "firebase/auth";
+import { ReactNode, useEffect, useMemo, useState } from "react";
+import { useAuthState } from "react-firebase-hooks/auth";
+import { Collection } from "../../enums/collection.enum";
+import useFirestoreDocuments from "../../hooks/useFirestoreDocuments";
+import { SettingsInterface } from "../../interfaces/Settings";
+import { auth } from "../../lib/firebase";
+import { useRouter } from "next/router";
+import { Page } from "../Page";
+import { Route } from "../../enums/route.enum";
+import Link from "next/link";
+import { Settings } from "../../screens/Settings";
 
-import COLLECTIONS from '../../enums/COLLECTIONS';
-import useFirestoreDocuments from '../../hooks/useFirestoreDocuments';
-import { SettingsInterface } from '../../interfaces/Settings';
-import { auth } from '../../lib/firebase';
-import { routesArray } from '../../ROUTES';
-import ROUTES from '../../ROUTES';
-import Settings from '../../screens/Settings';
-import Page from '../Page';
-
-const Dashboard: FC = ({ children }) => {
+const Dashboard = ({ children }: { children: ReactNode }) => {
   const { documents: settingsArray, loading: settingsLoading } =
-    useFirestoreDocuments<SettingsInterface>(COLLECTIONS.SETTINGS, true);
-  const settings = useMemo(() => settingsArray && settingsArray[0], [settingsArray]);
-  const [colorScheme, setColorScheme] = useLocalStorage<ColorScheme>({
-    key: 'color-scheme',
-  });
+    useFirestoreDocuments<SettingsInterface>(Collection.Settings, true);
+  const settings = useMemo(
+    () => settingsArray && settingsArray[0],
+    [settingsArray]
+  );
 
   const [user, loading] = useAuthState(auth);
   const [opened, setOpened] = useState(false);
-  const { pathname } = useLocation();
-  const navigate = useNavigate();
+  const router = useRouter();
   const theme = useMantineTheme();
 
   useEffect(() => {
-    if (!loading && !user) navigate(ROUTES.AUTH.path);
-  }, [loading, user]);
+    if (!loading && !user) router.replace(Route.Auth);
+  }, [loading, router, user]);
 
   if (loading || (!loading && !user))
     return (
@@ -64,59 +60,118 @@ const Dashboard: FC = ({ children }) => {
       navbarOffsetBreakpoint="sm"
       styles={() => ({
         main: {
-          display: 'flex',
-          flexDirection: 'column',
+          display: "flex",
+          flexDirection: "column",
         },
       })}
       fixed
       navbar={
         <Navbar
-          p={16}
           hiddenBreakpoint="sm"
           hidden={!opened}
           width={{ sm: 200, lg: 300 }}
         >
-          <Group direction="column" spacing="sm">
-            {routesArray
-              .filter((route) => 'label' in route)
-              // @ts-ignore
-              .map(({ label, path }) => (
-                <Anchor
-                  onClick={() => setOpened(false)}
-                  key={path}
-                  component={Link}
-                  to={path}
-                  style={{
-                    width: '100%',
-                  }}
-                >
-                  <Button
-                    style={{
-                      width: '100%',
-                    }}
-                    variant={pathname === path ? 'filled' : 'outline'}
-                  >
-                    {label}
-                  </Button>
-                </Anchor>
-              ))}
-            <Button
-              style={{
-                width: '100%',
+          <Stack spacing="sm">
+            <Link
+              onClick={() => {
+                setOpened(false);
               }}
-              variant="outline"
-              color="red"
-              onClick={() => signOut(auth)}
+              href={Route.Bookings}
+              passHref
             >
-              Uitloggen
-            </Button>
-          </Group>
+              <NavLink
+                active={
+                  router.pathname === Route.Bookings ||
+                  router.pathname === Route.Booking
+                }
+                component="a"
+                label="Boekingen"
+              />
+            </Link>
+            <Link
+              onClick={() => {
+                setOpened(false);
+              }}
+              href={Route.Invoices}
+              passHref
+            >
+              <NavLink
+                active={
+                  router.pathname === Route.Invoices ||
+                  router.pathname === Route.Invoice
+                }
+                component="a"
+                label="Facturen"
+              />
+            </Link>
+            <Link
+              onClick={() => {
+                setOpened(false);
+              }}
+              href={Route.Customers}
+              passHref
+            >
+              <NavLink
+                active={router.pathname === Route.Customers}
+                component="a"
+                label="Klanten"
+              />
+            </Link>
+            <Link
+              onClick={() => {
+                setOpened(false);
+              }}
+              href={Route.Rooms}
+              passHref
+            >
+              <NavLink
+                active={router.pathname === Route.Rooms}
+                component="a"
+                label="Kamers"
+              />
+            </Link>
+            <Link
+              onClick={() => {
+                setOpened(false);
+              }}
+              href={Route.CleaningSchedule}
+              passHref
+            >
+              <NavLink
+                active={router.pathname === Route.CleaningSchedule}
+                component="a"
+                label="Schoonmaakrooster"
+              />
+            </Link>
+            <Link
+              onClick={() => {
+                setOpened(false);
+              }}
+              href={Route.Settings}
+              passHref
+            >
+              <NavLink
+                active={router.pathname === Route.Settings}
+                component="a"
+                label="Instellingen"
+              />
+            </Link>
+            <NavLink
+              color="red"
+              active
+              variant="subtle"
+              onClick={() => signOut(auth)}
+              label="Uitloggen"
+            />
+          </Stack>
         </Navbar>
       }
       header={
         <Header height={70} p={16}>
-          <div style={{ display: 'flex', alignItems: 'center', height: '100%' }}>
-            <MediaQuery largerThan="sm" styles={{ display: 'none' }}>
+          <div
+            style={{ display: "flex", alignItems: "center", height: "100%" }}
+          >
+            <MediaQuery largerThan="sm" styles={{ display: "none" }}>
               <Burger
                 opened={opened}
                 onClick={() => setOpened((o) => !o)}
@@ -126,14 +181,6 @@ const Dashboard: FC = ({ children }) => {
               />
             </MediaQuery>
             <Title>Book a room</Title>
-            <Button
-              ml={16}
-              onClick={() =>
-                setColorScheme((current) => (current === 'dark' ? 'light' : 'dark'))
-              }
-            >
-              {colorScheme === 'dark' ? 'Licht' : 'Donker'}
-            </Button>
           </div>
         </Header>
       }
@@ -147,8 +194,8 @@ const Dashboard: FC = ({ children }) => {
       </div>
       <div
         style={{
-          width: '100%',
-          textAlign: 'center',
+          width: "100%",
+          textAlign: "center",
           marginLeft: -16,
           marginRight: -16,
           marginBottom: -16,
@@ -159,7 +206,7 @@ const Dashboard: FC = ({ children }) => {
         }}
       >
         <Text>
-          Developed by{' '}
+          Developed by{" "}
           <Anchor target="_blank" href="https://hexa-it.nl/">
             Hexa-IT
           </Anchor>

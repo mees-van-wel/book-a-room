@@ -1,46 +1,42 @@
-import pdf from '@react-pdf/renderer';
-import { FC } from 'react';
-
-import LocalResidenceFooter from '../../../footer-local-residence.jpg';
-import { compareDates } from '../../../forms/Booking/Booking';
-import LocalResidenceHeader from '../../../header-local-residence.jpg';
-import { BookingInterface } from '../../../interfaces/Booking';
-import { Invoice } from '../../../interfaces/invoice.interface';
-import { SettingsInterface } from '../../../interfaces/Settings';
-import LongStayBredaHeader from '../../../logo.jpg';
-import { bookingCalculator } from '../../../utils/bookingCalculator';
-import currency from '../../../utils/currency';
+import pdf from "@react-pdf/renderer";
+import { SettingsInterface } from "../../../interfaces/Settings";
+import { bookingCalculator } from "../../../utils/bookingCalculator";
+import currency from "../../../utils/currency";
+import { Booking } from "../../../interfaces/booking.interface";
+import { Timestamp } from "firebase/firestore";
+import { compareDates } from "../../Bookings/Booking";
+import { InvoiceType } from "../../../enums/invoiceType.enum";
 
 const { Document, Page, Text, View, StyleSheet, Image } = pdf;
 
 const styles = StyleSheet.create({
   page: {
     fontSize: 11,
-    flexDirection: 'column',
+    flexDirection: "column",
   },
   container: {
-    padding: '16px 32px 32px 32px',
+    padding: "16px 32px 32px 32px",
   },
   settingsContainer: {
-    alignItems: 'flex-end',
+    alignItems: "flex-end",
   },
   line: {
     marginVertical: 8,
     height: 1,
-    backgroundColor: 'black',
+    backgroundColor: "black",
     width: 100,
   },
   spacer: {
     marginVertical: 4,
   },
   table: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    justifyContent: "space-between",
   },
   header: {
     paddingBottom: 4,
     marginBottom: 4,
-    borderBottom: '1px solid black',
+    borderBottom: "1px solid black",
   },
   image: {
     marginBottom: 10,
@@ -48,12 +44,18 @@ const styles = StyleSheet.create({
 });
 
 interface ReceiptProps {
-  invoice: Invoice;
+  invoice: {
+    type: InvoiceType;
+    number: number | string;
+    date: Timestamp;
+    from: Timestamp;
+    to: Timestamp;
+  };
   settings: SettingsInterface;
-  booking: BookingInterface;
+  booking: Booking;
 }
 
-export const Receipt: FC<ReceiptProps> = ({ invoice, settings, booking }) => {
+export const Receipt = ({ invoice, settings, booking }: ReceiptProps) => {
   const isLastInvoice = compareDates(booking.end.toDate(), invoice.to.toDate());
 
   const {
@@ -67,6 +69,7 @@ export const Receipt: FC<ReceiptProps> = ({ invoice, settings, booking }) => {
     parking,
   } = bookingCalculator({
     isLastInvoice,
+    invoiceType: invoice.type,
     fromDate: invoice.from.toDate(),
     toDate: invoice.to.toDate(),
     touristTax: booking.touristTax,
@@ -81,12 +84,17 @@ export const Receipt: FC<ReceiptProps> = ({ invoice, settings, booking }) => {
   return (
     <Document>
       <Page size="A4" style={styles.page}>
-        {/*<Image src={LocalResidenceHeader} />*/}
-        <Image src={LongStayBredaHeader} />
+        <Image src={process.env.NEXT_PUBLIC_INVOICE_HEADER} />
         <View style={styles.container}>
           <View style={styles.settingsContainer}>
-            <Text>Invoice number: {invoice.id}</Text>
-            <Text>Date: {invoice.date.toDate().toLocaleDateString('nl-NL')}</Text>
+            <Text>
+              Type:{" "}
+              {invoice.type === InvoiceType.Credit ? "CREDIT NOTE" : "Invoice"}
+            </Text>
+            <Text>Number: {invoice.number}</Text>
+            <Text>
+              Date: {invoice.date.toDate().toLocaleDateString("nl-NL")}
+            </Text>
             <View style={styles.line} />
             <Text>{settings.companyName}</Text>
             <Text>
@@ -127,9 +135,10 @@ export const Receipt: FC<ReceiptProps> = ({ invoice, settings, booking }) => {
             <View>
               <Text style={styles.header}>Service</Text>
               <Text>
-                {booking.room.name} ({invoice.from.toDate().toLocaleDateString('Nl-nl')}
-                {' - '}
-                {invoice.to.toDate().toLocaleDateString('Nl-nl')})
+                {booking.room.name} (
+                {invoice.from.toDate().toLocaleDateString("Nl-nl")}
+                {" - "}
+                {invoice.to.toDate().toLocaleDateString("Nl-nl")})
               </Text>
               {cleaning && isLastInvoice ? <Text>Cleaning fee</Text> : <Text />}
               {parking ? <Text>Parking costs</Text> : <Text />}
@@ -143,8 +152,16 @@ export const Receipt: FC<ReceiptProps> = ({ invoice, settings, booking }) => {
               ) : (
                 <Text />
               )}
-              {parking ? <Text>{currency(parking.priceWithoutVat)}</Text> : <Text />}
-              {touristTaxTotal ? <Text>{currency(booking.touristTax)}</Text> : <Text />}
+              {parking ? (
+                <Text>{currency(parking.priceWithoutVat)}</Text>
+              ) : (
+                <Text />
+              )}
+              {touristTaxTotal ? (
+                <Text>{currency(booking.touristTax)}</Text>
+              ) : (
+                <Text />
+              )}
             </View>
             <View>
               <Text style={styles.header}>Amount</Text>
@@ -161,29 +178,41 @@ export const Receipt: FC<ReceiptProps> = ({ invoice, settings, booking }) => {
               ) : (
                 <Text />
               )}
-              {parking ? <Text>{currency(parking.totalWithoutVat)}</Text> : <Text />}
-              {touristTaxTotal ? <Text>{currency(touristTaxTotal)}</Text> : <Text />}
+              {parking ? (
+                <Text>{currency(parking.totalWithoutVat)}</Text>
+              ) : (
+                <Text />
+              )}
+              {touristTaxTotal ? (
+                <Text>{currency(touristTaxTotal)}</Text>
+              ) : (
+                <Text />
+              )}
             </View>
             <View>
               <Text style={styles.header}>VAT</Text>
               <Text>{`${currency(room.vat)} (${booking.btw}%${
-                booking.btw == 0 ? ' / Verlegd' : ''
+                booking.btw == 0 ? " / Verlegd" : ""
               })`}</Text>
               {cleaning && isLastInvoice ? (
                 <Text>{`${currency(cleaning.vat)} (${booking.cleaningFeeVat}%${
-                  booking.cleaningFeeVat == 0 ? ' / Verlegd' : ''
+                  booking.cleaningFeeVat == 0 ? " / Verlegd" : ""
                 })`}</Text>
               ) : (
                 <Text />
               )}
               {parking ? (
                 <Text>{`${currency(parking.vat)} (${booking.parkingFeeVat}%${
-                  booking.parkingFeeVat == 0 ? ' / Verlegd' : ''
+                  booking.parkingFeeVat == 0 ? " / Verlegd" : ""
                 })`}</Text>
               ) : (
                 <Text />
               )}
-              {touristTaxTotal ? <Text>{`${currency(0)} (0%)`}</Text> : <Text />}
+              {touristTaxTotal ? (
+                <Text>{`${currency(0)} (0%)`}</Text>
+              ) : (
+                <Text />
+              )}
             </View>
             <View>
               <Text style={styles.header}>Total</Text>
@@ -194,7 +223,11 @@ export const Receipt: FC<ReceiptProps> = ({ invoice, settings, booking }) => {
                 <Text />
               )}
               {parking ? <Text>{currency(parking.total)}</Text> : <Text />}
-              {touristTaxTotal ? <Text>{currency(touristTaxTotal)}</Text> : <Text />}
+              {touristTaxTotal ? (
+                <Text>{currency(touristTaxTotal)}</Text>
+              ) : (
+                <Text />
+              )}
             </View>
           </View>
           <View style={styles.spacer} />
@@ -203,9 +236,15 @@ export const Receipt: FC<ReceiptProps> = ({ invoice, settings, booking }) => {
           <Text>Total: {currency(total)}</Text>
           <View style={styles.spacer} />
           <View style={styles.spacer} />
-          <Text>We kindly request that you transfer the amount due within 14 days.</Text>
+          {invoice.type === InvoiceType.Normal && (
+            <Text>
+              We kindly request that you transfer the amount due within 14 days.
+            </Text>
+          )}
         </View>
-        {/*<Image src={LocalResidenceFooter} />*/}
+        {process.env.NEXT_PUBLIC_INVOICE_FOOTER && (
+          <Image src={process.env.NEXT_PUBLIC_INVOICE_FOOTER} />
+        )}
       </Page>
     </Document>
   );

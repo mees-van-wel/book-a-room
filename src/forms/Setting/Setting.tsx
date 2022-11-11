@@ -1,46 +1,54 @@
-import { Button, Group, TextInput, Title } from '@mantine/core';
-import { useForm } from '@mantine/hooks';
-import { useNotifications } from '@mantine/notifications';
-import { addDoc, collection, doc, setDoc } from 'firebase/firestore';
-import isEqual from 'lodash.isequal';
-import { FC, useMemo } from 'react';
+import { Button, ColorScheme, Group, TextInput, Title } from "@mantine/core";
+import { useForm } from "@mantine/form";
+import { useLocalStorage } from "@mantine/hooks";
+import { showNotification } from "@mantine/notifications";
+import { addDoc, collection, doc, setDoc } from "firebase/firestore";
+import isEqual from "lodash.isequal";
+import { FC, useMemo } from "react";
 
-import COLLECTIONS from '../../enums/COLLECTIONS';
-import { SettingsInterface } from '../../interfaces/Settings';
-import { firestore } from '../../lib/firebase';
+import { Collection } from "../../enums/collection.enum";
+import { SettingsInterface } from "../../interfaces/Settings";
+import { firestore } from "../../lib/firebase";
 
 interface FormProps {
   settings?: SettingsInterface;
 }
 
 const Setting: FC<FormProps> = ({ settings }) => {
-  const notifications = useNotifications();
+  const [colorScheme, setColorScheme] = useLocalStorage<ColorScheme>({
+    key: "color-scheme",
+  });
+
   const form = useForm<SettingsInterface>({
     initialValues: settings ?? {
-      companyName: '',
-      email: '',
-      phoneNumber: '',
-      street: '',
-      houseNumber: '',
-      postalCode: '',
-      city: '',
-      kvkNumber: '',
-      btwNumber: '',
-      bicCode: '',
-      iban: '',
-      id: '',
+      companyName: "",
+      email: "",
+      phoneNumber: "",
+      street: "",
+      houseNumber: "",
+      postalCode: "",
+      city: "",
+      kvkNumber: "",
+      btwNumber: "",
+      bicCode: "",
+      iban: "",
+      id: "",
     },
   });
 
-  const isDirty = useMemo(() => !isEqual(form.values, settings), [form.values, settings]);
+  const isDirty = useMemo(
+    () => !isEqual(form.values, settings),
+    [form.values, settings]
+  );
 
   const submitHandler = async (values: SettingsInterface) => {
-    if (!settings) await addDoc(collection(firestore, COLLECTIONS.SETTINGS), values);
-    else await setDoc(doc(firestore, COLLECTIONS.SETTINGS, settings.id), values);
+    if (!settings)
+      await addDoc(collection(firestore, Collection.SETTINGS), values);
+    else await setDoc(doc(firestore, Collection.SETTINGS, settings.id), values);
 
-    notifications.showNotification({
-      color: 'green',
-      message: 'Opgeslagen',
+    showNotification({
+      color: "green",
+      message: "Opgeslagen",
     });
   };
 
@@ -55,7 +63,7 @@ const Setting: FC<FormProps> = ({ settings }) => {
           required
           label="Bedrijfsnaam"
           placeholder="Bedrijfsnaam"
-          {...form.getInputProps('companyName')}
+          {...form.getInputProps("companyName")}
         />
         <Group grow>
           <TextInput
@@ -63,13 +71,13 @@ const Setting: FC<FormProps> = ({ settings }) => {
             label="E-mail"
             type="email"
             placeholder="E-mail"
-            {...form.getInputProps('email')}
+            {...form.getInputProps("email")}
           />
           <TextInput
             label="Telefoonnummer"
             type="tel"
             placeholder="Telefoonnummer"
-            {...form.getInputProps('phoneNumber')}
+            {...form.getInputProps("phoneNumber")}
           />
         </Group>
         <Group grow>
@@ -77,13 +85,13 @@ const Setting: FC<FormProps> = ({ settings }) => {
             required
             label="Straatnaam"
             placeholder="Straatnaam"
-            {...form.getInputProps('street')}
+            {...form.getInputProps("street")}
           />
           <TextInput
             required
             label="Huisnummer"
             placeholder="Huisnummer"
-            {...form.getInputProps('houseNumber')}
+            {...form.getInputProps("houseNumber")}
           />
         </Group>
         <Group grow>
@@ -91,13 +99,13 @@ const Setting: FC<FormProps> = ({ settings }) => {
             required
             label="Postcode"
             placeholder="Postcode"
-            {...form.getInputProps('postalCode')}
+            {...form.getInputProps("postalCode")}
           />
           <TextInput
             required
             label="Plaats"
             placeholder="Plaats"
-            {...form.getInputProps('city')}
+            {...form.getInputProps("city")}
           />
         </Group>
         <Group grow>
@@ -105,13 +113,13 @@ const Setting: FC<FormProps> = ({ settings }) => {
             required
             label="KvK-nummer"
             placeholder="KvK-nummer"
-            {...form.getInputProps('kvkNumber')}
+            {...form.getInputProps("kvkNumber")}
           />
           <TextInput
             required
             label="BTW-nummer"
             placeholder="BTW-nummer"
-            {...form.getInputProps('btwNumber')}
+            {...form.getInputProps("btwNumber")}
           />
         </Group>
         <Group grow>
@@ -119,16 +127,25 @@ const Setting: FC<FormProps> = ({ settings }) => {
             required
             label="Swift / BIC"
             placeholder="Swift / BIC"
-            {...form.getInputProps('bicCode')}
+            {...form.getInputProps("bicCode")}
           />
           <TextInput
             required
             label="IBAN"
             placeholder="IBAN"
-            {...form.getInputProps('iban')}
+            {...form.getInputProps("iban")}
           />
         </Group>
       </form>
+      <Title mt="md">Voorkeuren</Title>
+      <Button
+        mt="xs"
+        onClick={() =>
+          setColorScheme((current) => (current === "dark" ? "light" : "dark"))
+        }
+      >
+        {colorScheme === "dark" ? "Lichte modus" : "Donkere modus"}
+      </Button>
     </div>
   );
 };

@@ -1,70 +1,61 @@
-import { EventInput } from '@fullcalendar/common';
-import { EventApi } from '@fullcalendar/react';
-import { Loader, Modal } from '@mantine/core';
-import { FC, useMemo, useState } from 'react';
-import stc from 'string-to-color';
+import { Loader } from "@mantine/core";
+import { useRouter } from "next/router";
+import { ReactElement, useMemo } from "react";
+import { NextPageWithLayout } from "../../../pages/_app";
+import Calendar from "../../components/Calendar";
+import { Collection } from "../../enums/collection.enum";
+import { Route } from "../../enums/route.enum";
+import useFirestoreDocuments from "../../hooks/useFirestoreDocuments";
+import { Booking } from "../../interfaces/booking.interface";
+import { CalendarEvent } from "../../interfaces/calendarEvent.interface";
+import Dashboard from "../../layouts/Dashboard";
+import { NEW } from "../../utils/new.utility";
 
-import Calendar from '../../components/Calendar';
-import COLLECTIONS from '../../enums/COLLECTIONS';
-import Booking from '../../forms/Booking';
-import useFirestoreDocuments from '../../hooks/useFirestoreDocuments';
-import {
-  BookingInterface,
-  FirestoreBookingInterface,
-  NewBookingInterface,
-} from '../../interfaces/Booking';
-
-const Bookings: FC = () => {
-  const [booking, setBooking] = useState<BookingInterface | NewBookingInterface>();
-  const { documents: bookings, loading } =
-    useFirestoreDocuments<FirestoreBookingInterface>(COLLECTIONS.BOOKINGS, true);
-
-  const events = useMemo<EventInput[] | undefined>(
-    () =>
-      bookings?.map((booking) => ({
-        roomName: booking.room.name,
-        title: booking.customer.name,
-        start: booking.start.toDate(),
-        end: booking.end.toDate(),
-        extendedProps: booking,
-        borderColor: stc(booking.room.name),
-        backgroundColor: 'black',
-        textColor: 'white',
-      })),
-    [bookings],
+export const Bookings: NextPageWithLayout = () => {
+  const { documents: bookings } = useFirestoreDocuments<Booking>(
+    Collection.Bookings,
+    true
   );
 
-  if (loading) return <Loader />;
+  const router = useRouter();
 
-  const closeHandler = () => setBooking(undefined);
-  const newBookingHandler = (start: Date, end: Date) =>
-    setBooking({
-      start,
-      end,
-    });
-  const openBookingHandler = ({ extendedProps, start, end }: EventApi) => {
-    setBooking({
-      ...extendedProps,
-      start: start ?? new Date(),
-      end: end ?? new Date(),
-    });
-  };
+  const events = useMemo<CalendarEvent[] | undefined>(
+    () =>
+      bookings?.map((booking) => ({
+        id: booking.id,
+        title: booking.customer.secondName || booking.customer.name,
+        start: booking.start.toDate(),
+        end: booking.end.toDate(),
+        roomName: booking.room.name,
+      })),
+    [bookings]
+  );
+
+  if (!events) return <Loader />;
 
   return (
-    <>
-      <Modal opened={!!booking} size="xl" onClose={closeHandler} title="Boeking">
-        <Booking booking={booking} closeHandler={closeHandler} />
-      </Modal>
-
-      {events && (
-        <Calendar
-          events={events}
-          onClick={newBookingHandler}
-          onEventClick={openBookingHandler}
-        />
-      )}
-    </>
+    <Calendar
+      showAll
+      lsKey="calendar-bookings"
+      events={events}
+      onNewClick={() => {
+        router.push({
+          pathname: Route.Booking,
+          query: {
+            id: NEW,
+          },
+        });
+      }}
+      onEventClick={(id) => {
+        router.push({
+          pathname: Route.Booking,
+          query: {
+            id,
+          },
+        });
+      }}
+    />
   );
 };
 
-export default Bookings;
+Bookings.getLayout = (page: ReactElement) => <Dashboard>{page}</Dashboard>;

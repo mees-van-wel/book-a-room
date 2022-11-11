@@ -1,11 +1,11 @@
-import { Button, Group, NumberInput, TextInput } from '@mantine/core';
-import { useForm } from '@mantine/hooks';
-import { addDoc, collection, deleteDoc, doc, setDoc } from 'firebase/firestore';
-import { FC, useCallback } from 'react';
+import { Button, Group, NumberInput, TextInput } from "@mantine/core";
+import { useForm } from "@mantine/hooks";
+import { addDoc, collection, deleteDoc, doc, setDoc } from "firebase/firestore";
+import { FC, useCallback } from "react";
 
-import COLLECTIONS from '../../enums/COLLECTIONS';
-import { RoomInterface } from '../../interfaces/Room';
-import { firestore } from '../../lib/firebase';
+import { Collection } from "../../enums/collection.enum";
+import { RoomInterface } from "../../interfaces/Room";
+import { firestore } from "../../lib/firebase";
 
 interface RoomProps {
   room?: RoomInterface;
@@ -15,23 +15,24 @@ interface RoomProps {
 const Room: FC<RoomProps> = ({ room, closeHandler }) => {
   const form = useForm({
     initialValues: room ?? {
-      name: '',
+      name: "",
       price: null,
     },
   });
 
   const submitHandler = useCallback(
     async (values) => {
-      if (!room?.id) await addDoc(collection(firestore, COLLECTIONS.ROOMS), values);
-      else await setDoc(doc(firestore, COLLECTIONS.ROOMS, room.id), values);
+      if (!room?.id)
+        await addDoc(collection(firestore, Collection.ROOMS), values);
+      else await setDoc(doc(firestore, Collection.ROOMS, room.id), values);
 
       closeHandler();
     },
-    [room, closeHandler],
+    [room, closeHandler]
   );
 
   const deleteHandler = useCallback(async () => {
-    if (room?.id) await deleteDoc(doc(firestore, COLLECTIONS.ROOMS, room.id));
+    if (room?.id) await deleteDoc(doc(firestore, Collection.ROOMS, room.id));
 
     closeHandler();
   }, [room, closeHandler]);
@@ -42,7 +43,7 @@ const Room: FC<RoomProps> = ({ room, closeHandler }) => {
         required
         label="Naam"
         placeholder="Naam"
-        {...form.getInputProps('name')}
+        {...form.getInputProps("name")}
       />
       <NumberInput
         required
@@ -52,7 +53,7 @@ const Room: FC<RoomProps> = ({ room, closeHandler }) => {
         icon="€"
         label="Prijs per nacht"
         placeholder="Prijs per nacht"
-        {...form.getInputProps('price')}
+        {...form.getInputProps("price")}
       />
       <Group mt={16}>
         <Button type="submit">Opslaan</Button>

@@ -1,11 +1,11 @@
-import { Button, Group, TextInput } from '@mantine/core';
-import { useForm } from '@mantine/hooks';
-import { addDoc, collection, deleteDoc, doc, setDoc } from 'firebase/firestore';
-import { FC, useCallback } from 'react';
+import { Button, Group, TextInput } from "@mantine/core";
+import { useForm } from "@mantine/hooks";
+import { addDoc, collection, deleteDoc, doc, setDoc } from "firebase/firestore";
+import { FC, useCallback } from "react";
 
-import COLLECTIONS from '../../enums/COLLECTIONS';
-import { CustomerInterface } from '../../interfaces/Customer';
-import { firestore } from '../../lib/firebase';
+import { Collection } from "../../enums/collection.enum";
+import { CustomerInterface } from "../../interfaces/Customer";
+import { firestore } from "../../lib/firebase";
 
 interface CustomerProps {
   customer?: CustomerInterface;
@@ -30,16 +30,18 @@ const Customer: FC<CustomerProps> = ({ customer, closeHandler }) => {
   const submitHandler = useCallback(
     async (values) => {
       if (!customer?.id)
-        await addDoc(collection(firestore, COLLECTIONS.CUSTOMERS), values);
-      else await setDoc(doc(firestore, COLLECTIONS.CUSTOMERS, customer.id), values);
+        await addDoc(collection(firestore, Collection.CUSTOMERS), values);
+      else
+        await setDoc(doc(firestore, Collection.CUSTOMERS, customer.id), values);
 
       closeHandler();
     },
-    [customer, closeHandler],
+    [customer, closeHandler]
   );
 
   const deleteHandler = useCallback(async () => {
-    if (customer?.id) await deleteDoc(doc(firestore, COLLECTIONS.CUSTOMERS, customer.id));
+    if (customer?.id)
+      await deleteDoc(doc(firestore, Collection.CUSTOMERS, customer.id));
 
     closeHandler();
   }, [customer, closeHandler]);
@@ -50,52 +52,56 @@ const Customer: FC<CustomerProps> = ({ customer, closeHandler }) => {
         required
         label="Naam"
         placeholder="Naam"
-        {...form.getInputProps('name')}
+        {...form.getInputProps("name")}
       />
       <TextInput
         label="Tweede naam"
         placeholder="Tweede naam"
-        {...form.getInputProps('secondName')}
+        {...form.getInputProps("secondName")}
       />
       <TextInput
         required
         type="email"
         label="E-mail"
         placeholder="E-mail"
-        {...form.getInputProps('email')}
+        {...form.getInputProps("email")}
       />
       <TextInput
         required
         type="tel"
         label="Telefoonnummer"
         placeholder="Telefoonnummer"
-        {...form.getInputProps('phoneNumber')}
+        {...form.getInputProps("phoneNumber")}
       />
       <TextInput
         required
         label="Straat"
         placeholder="Straat"
-        {...form.getInputProps('street')}
+        {...form.getInputProps("street")}
       />
       <TextInput
         required
         label="Huisnummer"
         placeholder="Huisnummer"
-        {...form.getInputProps('houseNumber')}
+        {...form.getInputProps("houseNumber")}
       />
       <TextInput
         required
         label="Postcode"
         placeholder="Postcode"
-        {...form.getInputProps('postalCode')}
+        {...form.getInputProps("postalCode")}
       />
       <TextInput
         required
         label="Plaats"
         placeholder="Plaats"
-        {...form.getInputProps('city')}
+        {...form.getInputProps("city")}
       />
-      <TextInput label="Extra" placeholder="Extra" {...form.getInputProps('extra')} />
+      <TextInput
+        label="Extra"
+        placeholder="Extra"
+        {...form.getInputProps("extra")}
+      />
       <Group mt={16}>
         <Button type="submit">Opslaan</Button>
         {!!customer?.id && (
