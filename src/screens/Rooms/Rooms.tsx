@@ -1,16 +1,19 @@
-import { Button, Group, Loader, Modal, Table, Title } from "@mantine/core";
-import { ReactElement, useState } from "react";
+import { Button, Group, Loader, Table, Title } from "@mantine/core";
+import Link from "next/link";
+import { useRouter } from "next/router";
+import { ReactElement } from "react";
 import { NextPageWithLayout } from "../../../pages/_app";
-
 import { Collection } from "../../enums/collection.enum";
-import Room from "../../forms/Room";
+import { Route } from "../../enums/route.enum";
 import useFirestoreDocuments from "../../hooks/useFirestoreDocuments";
 import { RoomInterface } from "../../interfaces/Room";
 import Dashboard from "../../layouts/Dashboard";
 import currency from "../../utils/currency";
+import { generateRoute } from "../../utils/generateRoute.utility";
+import { NEW } from "../../utils/new.utility";
 
 export const Rooms: NextPageWithLayout = () => {
-  const [room, setRoom] = useState<RoomInterface | true>();
+  const router = useRouter();
   const { documents: rooms, loading } = useFirestoreDocuments<RoomInterface>(
     Collection.Rooms,
     true
@@ -18,53 +21,48 @@ export const Rooms: NextPageWithLayout = () => {
 
   if (loading) return <Loader />;
 
-  const closeHandler = () => setRoom(undefined);
-  const newHandler = () => setRoom(true);
-
   return (
-    <>
-      <Modal opened={!!room} onClose={closeHandler} title="Kamer">
-        <Room
-          room={room === true ? undefined : room}
-          closeHandler={closeHandler}
-        />
-      </Modal>
-
-      <div>
-        <Group>
-          <Title>Kamers</Title>
-          <Button onClick={newHandler}>Nieuw</Button>
-        </Group>
-        {rooms && !!rooms.length && (
-          <Table highlightOnHover>
-            <thead>
-              <tr>
-                <th>Naam</th>
-                <th>Prijs per nacht</th>
-              </tr>
-            </thead>
-            <tbody>
-              {rooms
-                .sort((a, b) =>
-                  a.name > b.name ? 1 : b.name > a.name ? -1 : 0
-                )
-                .map((room) => (
-                  <tr
-                    onClick={() => setRoom(room)}
-                    key={room.name}
-                    style={{
-                      cursor: "pointer",
-                    }}
-                  >
-                    <td>{room.name}</td>
-                    <td>{currency(room.price)}</td>
-                  </tr>
-                ))}
-            </tbody>
-          </Table>
-        )}
-      </div>
-    </>
+    <div>
+      <Group>
+        <Title>Kamers</Title>
+        <Link href={generateRoute(Route.Room, { id: NEW })} passHref>
+          <Button component="a">Nieuw</Button>
+        </Link>
+      </Group>
+      {rooms && !!rooms.length && (
+        <Table highlightOnHover>
+          <thead>
+            <tr>
+              <th>Naam</th>
+              <th>Prijs per nacht</th>
+            </tr>
+          </thead>
+          <tbody>
+            {rooms
+              .sort((a, b) => (a.name > b.name ? 1 : b.name > a.name ? -1 : 0))
+              .map((room) => (
+                <tr
+                  onClick={() => {
+                    router.push({
+                      pathname: Route.Room,
+                      query: {
+                        id: room.id,
+                      },
+                    });
+                  }}
+                  key={room.name}
+                  style={{
+                    cursor: "pointer",
+                  }}
+                >
+                  <td>{room.name}</td>
+                  <td>{currency(room.price)}</td>
+                </tr>
+              ))}
+          </tbody>
+        </Table>
+      )}
+    </div>
   );
 };
 

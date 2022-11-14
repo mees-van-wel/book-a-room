@@ -1,11 +1,11 @@
 import "../styles/globals.css";
 import type { AppProps } from "next/app";
-import { ReactElement, ReactNode, useEffect } from "react";
+import { ReactElement, ReactNode } from "react";
 import { NextPage } from "next";
 import { NotificationsProvider } from "@mantine/notifications";
 import { ColorScheme, MantineProvider } from "@mantine/core";
 import Head from "next/head";
-import { useLocalStorage } from "@mantine/hooks";
+import { useDidUpdate, useLocalStorage } from "@mantine/hooks";
 import { ModalsProvider } from "@mantine/modals";
 
 export type NextPageWithLayout<P = {}, IP = P> = NextPage<P, IP> & {
@@ -22,7 +22,7 @@ export default function App({ Component, pageProps }: AppPropsWithLayout) {
     key: "color-scheme",
   });
 
-  useEffect(() => {
+  useDidUpdate(() => {
     if (!colorScheme) {
       setColorScheme(
         window.matchMedia &&
@@ -31,7 +31,7 @@ export default function App({ Component, pageProps }: AppPropsWithLayout) {
           : "light"
       );
     }
-  }, []);
+  }, [colorScheme]);
 
   return (
     <>

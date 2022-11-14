@@ -121,8 +121,6 @@ interface BookingFormProps {
 const BookingForm = ({ booking }: BookingFormProps) => {
   const router = useRouter();
   const id = router.query.id as string;
-  const [cleaningDate, setCleaningDate] = useState<Date | null>(null);
-  const [cleaningNotes, setCleaningNotes] = useState<string>("");
   const [invoicePeriod, setInvoicePeriod] = useState<
     [Date | null, Date | null]
   >([null, null]);
@@ -610,7 +608,7 @@ const InvoiceOverview = ({
           borderRadius: 4,
           boxShadow: "0 0 10px 3px rgba(0,0,0,0.4)",
           padding: 16,
-          margin: 16,
+          margin: 8,
         }}
       >
         <p>
@@ -623,7 +621,8 @@ const InvoiceOverview = ({
           .toDate()
           .toLocaleDateString("nl-NL")} - ${invoice.to
           .toDate()
-          .toLocaleDateString("nl-NL")} (${invoiceNights} nachten)`}</p>
+          .toLocaleDateString("nl-NL")}`}</p>
+        <p>Nachten: {invoiceNights}</p>
         <Link
           passHref
           href={generateRoute(Route.Invoice, { id: invoiceSnapShot?.id })}
@@ -644,9 +643,10 @@ const InvoiceOverview = ({
       <>
         <div
           style={{
-            borderTop: "solid 1px gray",
-            marginBottom: 16,
-            paddingTop: 8,
+            borderRadius: 4,
+            boxShadow: "0 0 10px 3px rgba(0,0,0,0.4)",
+            padding: 16,
+            margin: 8,
           }}
         >
           <p>Type: Factuur</p>
@@ -658,11 +658,17 @@ const InvoiceOverview = ({
             .toDate()
             .toLocaleDateString("nl-NL")} - ${deprecatedInvoice.end
             .toDate()
-            .toLocaleDateString("nl-NL")} (${invoiceNights} nachten)`}</p>
-          <Group mt="xs">
+            .toLocaleDateString("nl-NL")}`}</p>
+          <p>Nachten: {invoiceNights}</p>
+          <Group mt="xs" noWrap>
             <PDFDownloadLink
               document={
                 <Receipt
+                  images={{
+                    dir: "/assets/images/",
+                    header: process.env.NEXT_PUBLIC_INVOICE_HEADER,
+                    footer: process.env.NEXT_PUBLIC_INVOICE_FOOTER,
+                  }}
                   invoice={{
                     type: InvoiceType.Normal,
                     number: deprecatedInvoice.number,

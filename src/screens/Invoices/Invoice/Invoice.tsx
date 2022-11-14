@@ -30,6 +30,7 @@ import { firestore } from "../../../lib/firebase";
 import { createRef } from "../../../utils/createRef.utility";
 import { generateRoute } from "../../../utils/generateRoute.utility";
 import getInvoiceNumber from "../../../utils/invoiceNumber";
+import { calcNights } from "../../Bookings/Booking";
 import { Receipt } from "../Receipt";
 
 export const Invoice: NextPageWithLayout = () => {
@@ -68,16 +69,6 @@ export const Invoice: NextPageWithLayout = () => {
     showNotification({
       color: "green",
       message: "Verwijderd",
-    });
-  };
-
-  const mailHandler = async () => {
-    await axios.post("/api/mail", {
-      to: "mees11@hotmail.nl",
-    });
-
-    await updateDoc(doc(firestore, Collection.Invoices, id), {
-      mailedOn: Timestamp.fromDate(new Date()),
     });
   };
 
@@ -121,6 +112,14 @@ export const Invoice: NextPageWithLayout = () => {
     });
   };
 
+  const invoiceNights = useMemo(
+    () =>
+      invoice?.to && invoice?.from
+        ? calcNights(invoice.to.toDate(), invoice.from.toDate())
+        : undefined,
+    [invoice?.from, invoice?.to]
+  );
+
   if (!invoice) return <Loader />;
 
   return (
@@ -145,6 +144,11 @@ export const Invoice: NextPageWithLayout = () => {
               <PDFDownloadLink
                 document={
                   <Receipt
+                    images={{
+                      dir: "/assets/images/",
+                      header: process.env.NEXT_PUBLIC_INVOICE_HEADER,
+                      footer: process.env.NEXT_PUBLIC_INVOICE_FOOTER,
+                    }}
                     invoice={invoice}
                     settings={settings}
                     booking={booking}
@@ -159,9 +163,20 @@ export const Invoice: NextPageWithLayout = () => {
                 <Button>Download</Button>
               </PDFDownloadLink>
             )}
-            {booking.customer.email && (
+            {booking.customer.email && settings && (
               <Button
-                onClick={mailHandler}
+                onClick={async () => {
+                  await axios.post("/api/mail", {
+                    to: "mees11@hotmail.nl",
+                    invoice,
+                    settings,
+                    booking,
+                  });
+
+                  await updateDoc(doc(firestore, Collection.Invoices, id), {
+                    mailedOn: Timestamp.fromDate(new Date()),
+                  });
+                }}
                 variant={invoice.mailedOn ? "light" : undefined}
               >
                 Mail
@@ -213,6 +228,12 @@ export const Invoice: NextPageWithLayout = () => {
             {invoice.to.toDate().toLocaleDateString("Nl-nl")}
           </td>
         </tr>
+        {invoiceNights && (
+          <tr>
+            <td>Nachten:</td>
+            <td>{invoiceNights}</td>
+          </tr>
+        )}
         {booking && (
           <>
             <tr>
@@ -229,7 +250,7 @@ export const Invoice: NextPageWithLayout = () => {
             </tr>
             {invoice.mailedOn && (
               <tr>
-                <td>gemaild op:</td>
+                <td>Gemaild op:</td>
                 <td>{invoice.mailedOn.toDate().toLocaleString("Nl-nl")}</td>
               </tr>
             )}

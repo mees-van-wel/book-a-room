@@ -142,138 +142,142 @@ const Calendar: FC<CalendarProps> = ({
           />
         </Group>
       </div>
-      <div
-        style={{
-          overflow: "auto",
-          maxHeight: "calc(100vh - 179px)",
-        }}
-      >
-        <table
+      {!!events.length && (
+        <div
           style={{
-            width: "100%",
-            borderCollapse: "collapse",
-            tableLayout: "fixed",
+            overflow: "auto",
+            maxHeight: "calc(100vh - 179px)",
           }}
         >
-          <tr>
-            <th />
-            {currentWeek?.map((day) => (
-              <th
-                key={day.getDate()}
-                style={{
-                  textAlign: "center",
-                  padding: 8,
-                  whiteSpace: "nowrap",
-                  overflow: "hidden",
-                  textOverflow: "ellipsis",
-                }}
-              >
-                {day.toLocaleDateString("nl-NL", {
-                  weekday: "short",
-                  day: "numeric",
-                  month: "long",
-                })}
-              </th>
-            ))}
-          </tr>
-          {rooms
-            ?.sort((a, b) => (a.name > b.name ? 1 : b.name > a.name ? -1 : 0))
-            .map(({ name }) => (
-              <tr
-                key={name}
-                style={{
-                  borderTop: "solid gray 1px",
-                }}
-              >
-                <td
+          <table
+            style={{
+              width: "100%",
+              borderCollapse: "collapse",
+              tableLayout: "fixed",
+            }}
+          >
+            <tr>
+              <th />
+              {currentWeek?.map((day) => (
+                <th
+                  key={day.getDate()}
                   style={{
-                    borderRight: "solid gray 1px",
+                    textAlign: "center",
                     padding: 8,
+                    whiteSpace: "nowrap",
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
                   }}
                 >
-                  {name}
-                </td>
-                {currentWeek?.map((day) => {
-                  const event = events.filter(
-                    (event) =>
-                      name === event.roomName &&
-                      (compareDates(day, event.start) ||
-                        dayjs(day).isBetween(
-                          event.start,
-                          event.end,
-                          null,
-                          "(]"
-                        ))
-                  );
+                  {day.toLocaleDateString("nl-NL", {
+                    weekday: "short",
+                    day: "numeric",
+                    month: "long",
+                  })}
+                </th>
+              ))}
+            </tr>
+            {rooms
+              ?.sort((a, b) => (a.name > b.name ? 1 : b.name > a.name ? -1 : 0))
+              .map(({ name }) => (
+                <tr
+                  key={name}
+                  style={{
+                    borderTop: "solid gray 1px",
+                  }}
+                >
+                  <td
+                    style={{
+                      borderRight: "solid gray 1px",
+                      padding: 8,
+                    }}
+                  >
+                    {name}
+                  </td>
+                  {currentWeek?.map((day) => {
+                    const event = events.filter(
+                      (event) =>
+                        name === event.roomName &&
+                        (compareDates(day, event.start) ||
+                          dayjs(day).isBetween(
+                            event.start,
+                            event.end,
+                            null,
+                            "(]"
+                          ))
+                    );
 
-                  return (
-                    <td
-                      key={day.getDate()}
-                      style={{
-                        verticalAlign: "top",
-                      }}
-                    >
-                      <div
+                    return (
+                      <td
+                        key={day.getDate()}
                         style={{
-                          display: "flex",
+                          verticalAlign: "top",
                         }}
                       >
-                        {!!event.length &&
-                          event.map((e, i) => {
-                            const isOne = calcNights(e.end, e.start) === 0;
-                            const isStart = compareDates(e.start, day);
-                            const isEnd = compareDates(e.end, day);
+                        <div
+                          style={{
+                            display: "flex",
+                          }}
+                        >
+                          {!!event.length &&
+                            event.map((e, i) => {
+                              const isOne = calcNights(e.end, e.start) === 0;
+                              const isStart = compareDates(e.start, day);
+                              const isEnd = compareDates(e.end, day);
 
-                            return (
-                              <p
-                                key={i}
-                                onClick={() =>
-                                  onEventClick && onEventClick(e.id)
-                                }
-                                style={{
-                                  cursor: onEventClick ? "pointer" : undefined,
-                                  borderTopLeftRadius: isStart ? 16 : 0,
-                                  borderBottomLeftRadius: isStart ? 16 : 0,
-                                  borderTopRightRadius: isEnd ? 16 : 0,
-                                  borderBottomRightRadius: isEnd ? 16 : 0,
-                                  background: isOne
-                                    ? "#1971c2"
-                                    : isStart
-                                    ? "linear-gradient(90deg, hsla(131, 54%, 40%, 1) 25%, hsla(209, 77%, 43%, 1) 100%)"
-                                    : isEnd
-                                    ? "linear-gradient(90deg, hsla(209, 77%, 43%, 1) 0%, hsla(0, 74%, 54%, 1) 75%)"
-                                    : "#1971c2",
-                                  color: "white",
-                                  fontSize: 14,
-                                  textAlign: full ? "left" : "center",
-                                  width: "calc(50% - 4px)",
-                                  marginLeft: isStart ? "auto" : -1,
-                                  flexGrow: isOne
-                                    ? 1
-                                    : isStart || isEnd
-                                    ? 0
-                                    : 1,
-                                  marginRight: -1,
-                                  marginTop: 8,
-                                  marginBottom: 8,
-                                  padding: "4px 8px",
-                                  whiteSpace: full ? undefined : "nowrap",
-                                  overflow: full ? undefined : "hidden",
-                                  textOverflow: full ? undefined : "ellipsis",
-                                }}
-                              >
-                                {e.title}
-                              </p>
-                            );
-                          })}
-                      </div>
-                    </td>
-                  );
-                })}
-              </tr>
-            ))}
-        </table>
-      </div>
+                              return (
+                                <p
+                                  key={i}
+                                  onClick={() =>
+                                    onEventClick && onEventClick(e.id)
+                                  }
+                                  style={{
+                                    cursor: onEventClick
+                                      ? "pointer"
+                                      : undefined,
+                                    borderTopLeftRadius: isStart ? 16 : 0,
+                                    borderBottomLeftRadius: isStart ? 16 : 0,
+                                    borderTopRightRadius: isEnd ? 16 : 0,
+                                    borderBottomRightRadius: isEnd ? 16 : 0,
+                                    background: isOne
+                                      ? "#1971c2"
+                                      : isStart
+                                      ? "linear-gradient(90deg, hsla(131, 54%, 40%, 1) 25%, hsla(209, 77%, 43%, 1) 100%)"
+                                      : isEnd
+                                      ? "linear-gradient(90deg, hsla(209, 77%, 43%, 1) 0%, hsla(0, 74%, 54%, 1) 75%)"
+                                      : "#1971c2",
+                                    color: "white",
+                                    fontSize: 14,
+                                    textAlign: full ? "left" : "center",
+                                    width: "calc(50% - 4px)",
+                                    marginLeft: isStart ? "auto" : -1,
+                                    flexGrow: isOne
+                                      ? 1
+                                      : isStart || isEnd
+                                      ? 0
+                                      : 1,
+                                    marginRight: -1,
+                                    marginTop: 8,
+                                    marginBottom: 8,
+                                    padding: "4px 8px",
+                                    whiteSpace: full ? undefined : "nowrap",
+                                    overflow: full ? undefined : "hidden",
+                                    textOverflow: full ? undefined : "ellipsis",
+                                  }}
+                                >
+                                  {e.title}
+                                </p>
+                              );
+                            })}
+                        </div>
+                      </td>
+                    );
+                  })}
+                </tr>
+              ))}
+          </table>
+        </div>
+      )}
     </div>
   );
 };

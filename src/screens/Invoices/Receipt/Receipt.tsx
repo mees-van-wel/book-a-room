@@ -44,6 +44,11 @@ const styles = StyleSheet.create({
 });
 
 interface ReceiptProps {
+  images?: {
+    dir: string;
+    header?: string;
+    footer?: string;
+  };
   invoice: {
     type: InvoiceType;
     number: number | string;
@@ -55,8 +60,16 @@ interface ReceiptProps {
   booking: Booking;
 }
 
-export const Receipt = ({ invoice, settings, booking }: ReceiptProps) => {
-  const isLastInvoice = compareDates(booking.end.toDate(), invoice.to.toDate());
+export const Receipt = ({
+  images: { dir, header, footer },
+  invoice,
+  settings,
+  booking,
+}: ReceiptProps) => {
+  const from = new Date(invoice.from.seconds * 1000);
+  const to = new Date(invoice.to.seconds * 1000);
+
+  const isLastInvoice = compareDates(new Date(booking.end.seconds * 1000), to);
 
   const {
     nights,
@@ -70,8 +83,8 @@ export const Receipt = ({ invoice, settings, booking }: ReceiptProps) => {
   } = bookingCalculator({
     isLastInvoice,
     invoiceType: invoice.type,
-    fromDate: invoice.from.toDate(),
-    toDate: invoice.to.toDate(),
+    fromDate: from,
+    toDate: to,
     touristTax: booking.touristTax,
     roomPrice: booking.room.price,
     roomvatPercentage: booking.btw,
@@ -84,7 +97,7 @@ export const Receipt = ({ invoice, settings, booking }: ReceiptProps) => {
   return (
     <Document>
       <Page size="A4" style={styles.page}>
-        <Image src={process.env.NEXT_PUBLIC_INVOICE_HEADER} />
+        {header && <Image src={`${dir}/${header}`} />}
         <View style={styles.container}>
           <View style={styles.settingsContainer}>
             <Text>
@@ -93,7 +106,10 @@ export const Receipt = ({ invoice, settings, booking }: ReceiptProps) => {
             </Text>
             <Text>Number: {invoice.number}</Text>
             <Text>
-              Date: {invoice.date.toDate().toLocaleDateString("nl-NL")}
+              Date:{" "}
+              {new Date(invoice.date.seconds * 1000).toLocaleDateString(
+                "nl-NL"
+              )}
             </Text>
             <View style={styles.line} />
             <Text>{settings.companyName}</Text>
@@ -135,10 +151,9 @@ export const Receipt = ({ invoice, settings, booking }: ReceiptProps) => {
             <View>
               <Text style={styles.header}>Service</Text>
               <Text>
-                {booking.room.name} (
-                {invoice.from.toDate().toLocaleDateString("Nl-nl")}
+                {booking.room.name} ({from.toLocaleDateString("Nl-nl")}
                 {" - "}
-                {invoice.to.toDate().toLocaleDateString("Nl-nl")})
+                {to.toLocaleDateString("Nl-nl")})
               </Text>
               {cleaning && isLastInvoice ? <Text>Cleaning fee</Text> : <Text />}
               {parking ? <Text>Parking costs</Text> : <Text />}
@@ -242,9 +257,7 @@ export const Receipt = ({ invoice, settings, booking }: ReceiptProps) => {
             </Text>
           )}
         </View>
-        {process.env.NEXT_PUBLIC_INVOICE_FOOTER && (
-          <Image src={process.env.NEXT_PUBLIC_INVOICE_FOOTER} />
-        )}
+        {footer && <Image src={`${dir}/${footer}`} />}
       </Page>
     </Document>
   );

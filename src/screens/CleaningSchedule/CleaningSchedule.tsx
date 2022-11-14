@@ -80,6 +80,7 @@ export const CleaningSchedule: NextPageWithLayout = () => {
         }}
       />
       <Button
+        mt="md"
         className="no-print"
         onClick={() => {
           window.open("/cleaning-schedule-print", "_blank");

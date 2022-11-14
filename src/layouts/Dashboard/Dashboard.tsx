@@ -112,7 +112,10 @@ const Dashboard = ({ children }: { children: ReactNode }) => {
               passHref
             >
               <NavLink
-                active={router.pathname === Route.Customers}
+                active={
+                  router.pathname === Route.Customers ||
+                  router.pathname === Route.Customer
+                }
                 component="a"
                 label="Klanten"
               />
@@ -125,7 +128,10 @@ const Dashboard = ({ children }: { children: ReactNode }) => {
               passHref
             >
               <NavLink
-                active={router.pathname === Route.Rooms}
+                active={
+                  router.pathname === Route.Rooms ||
+                  router.pathname === Route.Room
+                }
                 component="a"
                 label="Kamers"
               />
