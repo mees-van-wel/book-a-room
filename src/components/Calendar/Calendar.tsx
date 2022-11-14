@@ -25,7 +25,8 @@ const compareDates = (firstDate: Date, secondDate?: Date) => {
 interface CalendarProps {
   lsKey: string;
   showAll?: boolean;
-  events: CalendarEvent[] | (() => Promise<CalendarEvent[]>);
+  events: CalendarEvent[];
+  full?: boolean;
   onNewClick?: () => void;
   onEventClick?: (eventId: string) => void;
 }
@@ -33,13 +34,11 @@ interface CalendarProps {
 const Calendar: FC<CalendarProps> = ({
   lsKey,
   showAll,
-  events: eventsFn,
+  events,
+  full,
   onEventClick,
   onNewClick,
 }) => {
-  const [events, setEvents] = useState<CalendarEvent[]>(
-    Array.isArray(eventsFn) ? eventsFn : []
-  );
   const [dateString, setDate] = useLocalStorage<string>({
     key: lsKey,
     defaultValue: now.toISOString(),
@@ -91,10 +90,6 @@ const Calendar: FC<CalendarProps> = ({
     const cloneDate = new Date(date);
     setDate(new Date(cloneDate.setDate(date.getDate() + 7)).toISOString());
   };
-
-  useEffect(() => {
-    if (!Array.isArray(eventsFn)) eventsFn().then(setEvents);
-  }, []);
 
   return (
     <div>
@@ -250,7 +245,7 @@ const Calendar: FC<CalendarProps> = ({
                                     : "#1971c2",
                                   color: "white",
                                   fontSize: 14,
-                                  textAlign: "center",
+                                  textAlign: full ? "left" : "center",
                                   width: "calc(50% - 4px)",
                                   marginLeft: isStart ? "auto" : -1,
                                   flexGrow: isOne
@@ -262,9 +257,9 @@ const Calendar: FC<CalendarProps> = ({
                                   marginTop: 8,
                                   marginBottom: 8,
                                   padding: "4px 8px",
-                                  whiteSpace: "nowrap",
-                                  overflow: "hidden",
-                                  textOverflow: "ellipsis",
+                                  whiteSpace: full ? undefined : "nowrap",
+                                  overflow: full ? undefined : "hidden",
+                                  textOverflow: full ? undefined : "ellipsis",
                                 }}
                               >
                                 {e.title}
