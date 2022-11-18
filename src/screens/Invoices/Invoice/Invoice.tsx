@@ -55,12 +55,13 @@ export const Invoice: NextPageWithLayout = () => {
   );
 
   const deleteHandler = async () => {
-    if (!booking || !invoice) return;
+    if (!invoice) return;
 
-    await updateDoc(invoice.booking, {
-      // @ts-ignore
-      invoices: booking.invoices.filter((invoice) => invoice.id !== id),
-    });
+    if (!!booking)
+      await updateDoc(invoice.booking, {
+        // @ts-ignore
+        invoices: booking.invoices.filter((invoice) => invoice.id !== id),
+      });
 
     await deleteDoc(doc(firestore, Collection.Invoices, id));
 
@@ -120,6 +121,33 @@ export const Invoice: NextPageWithLayout = () => {
     [invoice?.from, invoice?.to]
   );
 
+  const mailHandler = async () => {
+    if (!booking?.customer.email) {
+      showNotification({
+        color: "red",
+        message: "Klant heeft geen e-mailadres",
+      });
+
+      return;
+    }
+
+    await axios.post("/api/mail", {
+      to: booking.customer.email,
+      invoice,
+      settings,
+      booking,
+    });
+
+    await updateDoc(doc(firestore, Collection.Invoices, id), {
+      mailedOn: Timestamp.fromDate(new Date()),
+    });
+
+    showNotification({
+      color: "green",
+      message: "Gemaild",
+    });
+  };
+
   if (!invoice) return <Loader />;
 
   return (
@@ -165,16 +193,11 @@ export const Invoice: NextPageWithLayout = () => {
             )}
             {booking.customer.email && settings && (
               <Button
-                onClick={async () => {
-                  await axios.post("/api/mail", {
-                    to: "mees11@hotmail.nl",
-                    invoice,
-                    settings,
-                    booking,
-                  });
-
-                  await updateDoc(doc(firestore, Collection.Invoices, id), {
-                    mailedOn: Timestamp.fromDate(new Date()),
+                onClick={() => {
+                  openConfirmModal({
+                    title: "Weet je het zeker?",
+                    labels: { confirm: "Ja", cancel: "Nee" },
+                    onConfirm: mailHandler,
                   });
                 }}
                 variant={invoice.mailedOn ? "light" : undefined}
@@ -185,26 +208,32 @@ export const Invoice: NextPageWithLayout = () => {
             {invoice.type === InvoiceType.Normal && (
               <Button
                 variant={invoice.creditedOn ? "light" : undefined}
-                onClick={createCreditHandler}
+                onClick={() => {
+                  openConfirmModal({
+                    title: "Weet je het zeker?",
+                    labels: { confirm: "Ja", cancel: "Nee" },
+                    onConfirm: createCreditHandler,
+                  });
+                }}
               >
                 Maak creditfactuur
               </Button>
             )}
-            <Button
-              onClick={() => {
-                openConfirmModal({
-                  title: "Weet je het zeker?",
-                  labels: { confirm: "Ja", cancel: "Nee" },
-                  onConfirm: deleteHandler,
-                });
-              }}
-              color="red"
-              variant="light"
-            >
-              Verwijderen
-            </Button>
           </>
         )}
+        <Button
+          onClick={() => {
+            openConfirmModal({
+              title: "Weet je het zeker?",
+              labels: { confirm: "Ja", cancel: "Nee" },
+              onConfirm: deleteHandler,
+            });
+          }}
+          color="red"
+          variant="light"
+        >
+          Verwijderen
+        </Button>
       </Group>
       <table width={500}>
         <tr>
@@ -263,7 +292,11 @@ export const Invoice: NextPageWithLayout = () => {
           </>
         )}
       </table>
-      {booking && <InvoiceDetails invoice={invoice} booking={booking} />}
+      {booking ? (
+        <InvoiceDetails invoice={invoice} booking={booking} />
+      ) : (
+        <p>De bijbehorende boeking is verwijderd.</p>
+      )}
     </div>
   );
 };

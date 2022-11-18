@@ -52,8 +52,9 @@ export default async function handler(
     .sendMail({
       from: process.env.SMTP_FROM,
       to: to,
+      bcc: process.env.SMTP_BCC,
       subject: "Factuur",
-      html: "Test body",
+      html: `Beste klant,<br /><br />Bijgevoegd vindt u uw factuur.<br /><br />Met vriendelijke groeten,<br /><br />Team ${settings.companyName}`,
       attachments: [
         {
           filename: `${

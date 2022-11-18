@@ -72,9 +72,17 @@ export const bookingCalculator = ({
   const vat = roomVat + (isLastInvoice ? cleaningVat : 0) + parkingVat;
   const totalWithoutVat = Math.round((total - vat) * 100) / 100;
 
-  return {
+  return { 
     nights,
-    touristTaxTotal: touristTax ? touristTaxTotal : undefined,
+    tourist: touristTax
+      ? {
+          total:
+            invoiceType === InvoiceType.Credit
+              ? -Math.abs(touristTaxTotal)
+              : touristTaxTotal,
+        }
+      : undefined,
+
     totalWithoutVat:
       invoiceType === InvoiceType.Credit
         ? -Math.abs(totalWithoutVat)

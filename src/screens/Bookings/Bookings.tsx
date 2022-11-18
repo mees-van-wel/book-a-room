@@ -23,7 +23,9 @@ export const Bookings: NextPageWithLayout = () => {
     () =>
       bookings?.map((booking) => ({
         id: booking.id,
-        title: booking.customer.secondName || booking.customer.name,
+        title: !!booking.extraOne
+          ? `${booking.extraOne} - ${booking.customer.name}`
+          : booking.customer.name,
         start: booking.start.toDate(),
         end: booking.end.toDate(),
         roomName: booking.room.name,

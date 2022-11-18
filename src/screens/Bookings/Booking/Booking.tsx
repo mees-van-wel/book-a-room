@@ -539,7 +539,7 @@ const BookingForm = ({ booking }: BookingFormProps) => {
               </Button>
             )}
           </Group>
-          {booking.invoices.length && (
+          {!!booking.invoices.length && (
             <ScrollArea
               mt="md"
               style={{

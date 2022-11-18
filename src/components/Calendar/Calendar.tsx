@@ -3,7 +3,7 @@ import { DatePicker, getMonthDays } from "@mantine/dates";
 import { useLocalStorage } from "@mantine/hooks";
 import dayjs from "dayjs";
 import isBetween from "dayjs/plugin/isBetween";
-import { FC, useEffect, useMemo, useState } from "react";
+import { FC, useMemo } from "react";
 import { Collection } from "../../enums/collection.enum";
 import useFirestoreDocuments from "../../hooks/useFirestoreDocuments";
 import { CalendarEvent } from "../../interfaces/calendarEvent.interface";
@@ -225,8 +225,11 @@ const Calendar: FC<CalendarProps> = ({
                               const isStart = compareDates(e.start, day);
                               const isEnd = compareDates(e.end, day);
 
+                              console.log(e.title);
+
                               return (
                                 <p
+                                  title={e.title}
                                   key={i}
                                   onClick={() =>
                                     onEventClick && onEventClick(e.id)
@@ -250,6 +253,7 @@ const Calendar: FC<CalendarProps> = ({
                                     fontSize: 14,
                                     textAlign: full ? "left" : "center",
                                     width: "calc(50% - 4px)",
+                                    height: !e.title ? "30px" : undefined,
                                     marginLeft: isStart ? "auto" : -1,
                                     flexGrow: isOne
                                       ? 1
