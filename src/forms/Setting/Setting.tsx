@@ -43,8 +43,8 @@ const Setting: FC<FormProps> = ({ settings }) => {
 
   const submitHandler = async (values: SettingsInterface) => {
     if (!settings)
-      await addDoc(collection(firestore, Collection.SETTINGS), values);
-    else await setDoc(doc(firestore, Collection.SETTINGS, settings.id), values);
+      await addDoc(collection(firestore, Collection.Settings), values);
+    else await setDoc(doc(firestore, Collection.Settings, settings.id), values);
 
     showNotification({
       color: "green",

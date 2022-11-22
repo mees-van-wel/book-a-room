@@ -19,7 +19,7 @@ export const InvoiceDetails: FC<InvoiceDetailsProps> = ({
 
   const {
     nights,
-    touristTaxTotal,
+    tourist,
     totalWithoutVat,
     vat,
     total,
@@ -97,14 +97,14 @@ export const InvoiceDetails: FC<InvoiceDetailsProps> = ({
               <td>{currency(parking.total)}</td>
             </tr>
           )}
-          {touristTaxTotal && (
+          {tourist && (
             <tr>
               <td>Toeristenbelasting</td>
               <td>{currency(booking.touristTax)}</td>
               <td>{nights}</td>
-              <td>{currency(touristTaxTotal)}</td>
+              <td>{currency(tourist.total)}</td>
               <td>{`${currency(0)} (0%)`}</td>
-              <td>{currency(touristTaxTotal)}</td>
+              <td>{currency(tourist.total)}</td>
             </tr>
           )}
         </tbody>

@@ -74,6 +74,7 @@ export const Invoices: NextPageWithLayout = () => {
                         Van {invoice.from.toDate().toLocaleDateString("Nl-nl")}{" "}
                         tot {invoice.to.toDate().toLocaleDateString("Nl-nl")}
                       </td>
+                      {/* @ts-ignore */}
                       <BookingDetails bookingRef={invoice.booking} />
                     </tr>
                   );
@@ -91,7 +92,8 @@ interface BookingDetailsProps {
 }
 
 const BookingDetails = ({ bookingRef }: BookingDetailsProps) => {
-  const [booking, loading] = useDocumentData<Booking>(bookingRef);
+  // @ts-ignore
+  const [booking] = useDocumentData<Booking>(bookingRef);
 
   if (booking)
     return (

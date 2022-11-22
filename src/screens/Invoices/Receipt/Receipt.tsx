@@ -61,7 +61,7 @@ interface ReceiptProps {
 }
 
 export const Receipt = ({
-  images: { dir, header, footer },
+  images,
   invoice,
   settings,
   booking,
@@ -73,7 +73,7 @@ export const Receipt = ({
 
   const {
     nights,
-    touristTaxTotal,
+    tourist,
     totalWithoutVat,
     vat,
     total,
@@ -97,7 +97,8 @@ export const Receipt = ({
   return (
     <Document>
       <Page size="A4" style={styles.page}>
-        {header && <Image src={`${dir}/${header}`} />}
+        {/* eslint-disable-next-line jsx-a11y/alt-text */}
+        {images?.header && <Image src={`${images.dir}/${images.header}`} />}
         <View style={styles.container}>
           <View style={styles.settingsContainer}>
             <Text>
@@ -157,7 +158,7 @@ export const Receipt = ({
               </Text>
               {cleaning && isLastInvoice ? <Text>Cleaning fee</Text> : <Text />}
               {parking ? <Text>Parking costs</Text> : <Text />}
-              {touristTaxTotal ? <Text>Tourist tax</Text> : <Text />}
+              {tourist ? <Text>Tourist tax</Text> : <Text />}
             </View>
             <View>
               <Text style={styles.header}>Unit price</Text>
@@ -172,18 +173,14 @@ export const Receipt = ({
               ) : (
                 <Text />
               )}
-              {touristTaxTotal ? (
-                <Text>{currency(booking.touristTax)}</Text>
-              ) : (
-                <Text />
-              )}
+              {tourist ? <Text>{currency(booking.touristTax)}</Text> : <Text />}
             </View>
             <View>
               <Text style={styles.header}>Amount</Text>
               <Text>{nights}</Text>
               {cleaning && isLastInvoice ? <Text>{nights}</Text> : <Text />}
               {parking ? <Text>{nights}</Text> : <Text />}
-              {touristTaxTotal ? <Text>{nights}</Text> : <Text />}
+              {tourist ? <Text>{nights}</Text> : <Text />}
             </View>
             <View>
               <Text style={styles.header}>Total excluding VAT</Text>
@@ -198,11 +195,7 @@ export const Receipt = ({
               ) : (
                 <Text />
               )}
-              {touristTaxTotal ? (
-                <Text>{currency(touristTaxTotal)}</Text>
-              ) : (
-                <Text />
-              )}
+              {tourist ? <Text>{currency(tourist.total)}</Text> : <Text />}
             </View>
             <View>
               <Text style={styles.header}>VAT</Text>
@@ -223,11 +216,7 @@ export const Receipt = ({
               ) : (
                 <Text />
               )}
-              {touristTaxTotal ? (
-                <Text>{`${currency(0)} (0%)`}</Text>
-              ) : (
-                <Text />
-              )}
+              {tourist ? <Text>{`${currency(0)} (0%)`}</Text> : <Text />}
             </View>
             <View>
               <Text style={styles.header}>Total</Text>
@@ -238,11 +227,7 @@ export const Receipt = ({
                 <Text />
               )}
               {parking ? <Text>{currency(parking.total)}</Text> : <Text />}
-              {touristTaxTotal ? (
-                <Text>{currency(touristTaxTotal)}</Text>
-              ) : (
-                <Text />
-              )}
+              {tourist ? <Text>{currency(tourist.total)}</Text> : <Text />}
             </View>
           </View>
           <View style={styles.spacer} />
@@ -257,7 +242,8 @@ export const Receipt = ({
             </Text>
           )}
         </View>
-        {footer && <Image src={`${dir}/${footer}`} />}
+        {/* eslint-disable-next-line jsx-a11y/alt-text */}
+        {images?.footer && <Image src={`${images.dir}/${images.footer}`} />}
       </Page>
     </Document>
   );
