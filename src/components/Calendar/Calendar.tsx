@@ -225,8 +225,6 @@ const Calendar: FC<CalendarProps> = ({
                               const isStart = compareDates(e.start, day);
                               const isEnd = compareDates(e.end, day);
 
-                              console.log(e.title);
-
                               return (
                                 <p
                                   title={e.title}
