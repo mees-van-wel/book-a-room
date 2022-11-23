@@ -45,6 +45,11 @@ a {
     display: none !important;
   }
 
+  .bg::before {
+    margin-left: 50%;
+    content: "X";
+  }
+
   * {
       color: black !important;
       font-size: 11px !important;

@@ -227,6 +227,7 @@ const Calendar: FC<CalendarProps> = ({
 
                               return (
                                 <p
+                                  className={!e.title ? "bg" : undefined}
                                   title={e.title}
                                   key={i}
                                   onClick={() =>
