@@ -357,6 +357,14 @@ const BookingForm = ({ booking }: BookingFormProps) => {
           label="Datum"
           locale="nl"
           placeholder="Datum"
+          description={
+            form.values.date[0] && form.values.date[1]
+              ? `Nachten: ${calcNights(
+                  form.values.date[1],
+                  form.values.date[0]
+                )}`
+              : undefined
+          }
           {...form.getInputProps("date")}
         />
         <Select

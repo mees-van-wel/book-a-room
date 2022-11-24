@@ -1,0 +1,12 @@
+pipelines:
+  branches:
+    main:
+      - step:
+          name: Deploy to production
+          deployment: production
+          script:
+            - pipe: atlassian/ssh-run:0.4.1
+              variables:
+                SSH_USER: $SSH_USER
+                SERVER: $SSH_HOST
+                COMMAND: "cd /home/$SSH_USER/apps/longstay-breda && git pull && yarn install --frozen-lockfile --ignore-scripts && yarn run build && pm2 reload longstay-breda && cd /home/$SSH_USER/apps/local-residence && git pull && yarn install --frozen-lockfile --ignore-scripts && yarn run build && pm2 reload local-residence"

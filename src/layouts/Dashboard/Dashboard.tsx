@@ -216,6 +216,8 @@ const Dashboard = ({ children }: { children: ReactNode }) => {
           <Anchor target="_blank" href="https://hexa-it.nl/">
             Hexa-IT
           </Anchor>
+          {" - "}
+          Version 1.0.0
         </Text>
       </div>
     </AppShell>
