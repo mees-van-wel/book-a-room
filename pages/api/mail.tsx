@@ -55,7 +55,7 @@ export default async function handler(
       to: to,
       bcc: process.env.SMTP_BCC,
       subject: "Factuur",
-      html: `Beste klant,<br /><br />Bijgevoegd vindt u uw factuur.<br /><br />Met vriendelijke groeten,<br /><br />Team ${settings.companyName}`,
+      html: `Dear customer,<br /><br />Attached you will find your invoice.<br /><br />Kind regards,<br /><br />Team ${settings.companyName}`,
       attachments: [
         {
           filename: `${
