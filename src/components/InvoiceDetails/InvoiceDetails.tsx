@@ -33,11 +33,11 @@ export const InvoiceDetails: FC<InvoiceDetailsProps> = ({
     toDate: invoice.to.toDate(),
     touristTax: booking.touristTax,
     roomPrice: booking.room.price,
-    roomvatPercentage: booking.btw,
+    roomvatPercentage: parseInt(booking.btw),
     cleaningPrice: booking.cleaningFee,
-    cleaningVatPercentage: booking.cleaningFeeVat,
+    cleaningVatPercentage: parseInt(booking.cleaningFeeVat),
     parkingPrice: booking.parkingFee,
-    parkingVatPercentage: booking.parkingFeeVat,
+    parkingVatPercentage: parseInt(booking.parkingFeeVat),
   });
 
   return (
@@ -69,7 +69,7 @@ export const InvoiceDetails: FC<InvoiceDetailsProps> = ({
             <td>{nights}</td>
             <td>{currency(room.totalWithoutVat)}</td>
             <td>{`${currency(room.vat)} (${booking.btw}%${
-              booking.btw == 0 ? " / Verlegd" : ""
+              parseInt(booking.btw) == 0 ? " / Verlegd" : ""
             })`}</td>
             <td>{currency(room.total)}</td>
           </tr>
@@ -80,7 +80,7 @@ export const InvoiceDetails: FC<InvoiceDetailsProps> = ({
               <td>1</td>
               <td>{currency(cleaning.totalWithoutVat)}</td>
               <td>{`${currency(cleaning.vat)} (${booking.cleaningFeeVat}%${
-                booking.cleaningFeeVat == 0 ? " / Verlegd" : ""
+                parseInt(booking.cleaningFeeVat) == 0 ? " / Verlegd" : ""
               })`}</td>
               <td>{currency(cleaning.total)}</td>
             </tr>
@@ -92,7 +92,7 @@ export const InvoiceDetails: FC<InvoiceDetailsProps> = ({
               <td>{nights}</td>
               <td>{currency(parking.totalWithoutVat)}</td>
               <td>{`${currency(parking.vat)} (${booking.parkingFeeVat}%${
-                booking.parkingFeeVat == 0 ? " / Verlegd" : ""
+                parseInt(booking.parkingFeeVat) == 0 ? " / Verlegd" : ""
               })`}</td>
               <td>{currency(parking.total)}</td>
             </tr>

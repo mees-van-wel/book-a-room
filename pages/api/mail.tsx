@@ -1,11 +1,11 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import nodemailer from "nodemailer";
 import { renderToStream } from "@react-pdf/renderer";
-import { Receipt } from "../../src/screens/Invoices/Receipt";
 import { Invoice } from "../../src/interfaces/invoice.interface";
 import { SettingsInterface } from "../../src/interfaces/Settings";
 import { Booking } from "../../src/interfaces/booking.interface";
 import { InvoiceType } from "../../src/enums/invoiceType.enum";
+import { DeprecatedReceipt } from "../../src/screens/Invoices/DeprecatedReceipt";
 
 let transporter = nodemailer.createTransport({
   // @ts-ignore
@@ -37,7 +37,7 @@ export default async function handler(
   };
 
   const stream = await renderToStream(
-    <Receipt
+    <DeprecatedReceipt
       images={{
         dir: `http://${req.headers.host}/assets/images`,
         header: process.env.NEXT_PUBLIC_INVOICE_HEADER,

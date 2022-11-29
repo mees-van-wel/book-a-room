@@ -225,6 +225,13 @@ const Calendar: FC<CalendarProps> = ({
                               const isStart = compareDates(e.start, day);
                               const isEnd = compareDates(e.end, day);
 
+                              const opacity =
+                                e.invoicedTill &&
+                                e.invoicedTill?.toDate().getTime() <
+                                  day.getTime()
+                                  ? 0.5
+                                  : 1;
+
                               return (
                                 <p
                                   className={!e.title ? "bg" : undefined}
@@ -252,6 +259,7 @@ const Calendar: FC<CalendarProps> = ({
                                     fontSize: 14,
                                     textAlign: full ? "left" : "center",
                                     width: "calc(50% - 4px)",
+                                    opacity,
                                     height: !e.title ? "30px" : undefined,
                                     marginLeft: isStart ? "auto" : -1,
                                     flexGrow: isOne
