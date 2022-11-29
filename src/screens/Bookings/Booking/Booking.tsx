@@ -1,5 +1,6 @@
 import "dayjs/locale/nl";
 import {
+  Badge,
   Button,
   Group,
   Loader,
@@ -47,16 +48,44 @@ import { isNew } from "../../../utils/new.utility";
 import { createRef } from "../../../utils/createRef.utility";
 import { Room } from "../../../interfaces/room.interface";
 import { Customer } from "../../../interfaces/customer.interface";
-import { Invoice } from "../../../interfaces/invoice.interface";
+import { Invoice, InvoiceLine } from "../../../interfaces/invoice.interface";
 import { generateRoute } from "../../../utils/generateRoute.utility";
 import { PDFDownloadLink } from "@react-pdf/renderer";
-import { Receipt } from "../../Invoices/Receipt";
+import { DeprecatedReceipt } from "../../Invoices/DeprecatedReceipt";
 import getInvoiceNumber from "../../../utils/invoiceNumber";
 import { openConfirmModal } from "@mantine/modals";
 import { InvoiceType } from "../../../enums/invoiceType.enum";
 import { CleaningInterval } from "../../../enums/cleaningInterval.enum";
+import { calculateCurrency } from "../../../utils/calculateCurrency.utility";
+import { RoomInterface } from "../../../interfaces/Room";
+import { CustomerInterface } from "../../../interfaces/Customer";
 
 dayjs.extend(isBetween);
+
+const calcAll = ({
+  unitPrice,
+  quantity,
+  vatPercentage,
+}: {
+  unitPrice: number;
+  quantity: number;
+  vatPercentage: number;
+}) => {
+  const total = calculateCurrency(unitPrice * quantity);
+  const vat = calcVat(total, vatPercentage);
+  const totalWithoutVat = calculateCurrency(total - vat);
+  const unitPriceWithoutVat = calculateCurrency(totalWithoutVat / quantity);
+
+  return {
+    unitPriceWithoutVat,
+    unitPrice,
+    quantity,
+    totalWithoutVat,
+    vat,
+    vatPercentage,
+    total,
+  };
+};
 
 export const calcVat = (price: number, vat: number) =>
   Math.round((price / (100 + vat)) * vat * 100) / 100;
@@ -89,15 +118,51 @@ export const Booking: NextPageWithLayout = () => {
     createRef<BookingInterface>(Collection.Bookings, isNew(id) ? undefined : id)
   );
 
-  if (isNew(id) || (!loading && booking))
-    return <BookingForm booking={booking} />;
+  if (isNew(id) || (!loading && booking)) return <Wrapper booking={booking} />;
+
+  return <Loader />;
+};
+
+const Wrapper = ({ booking }: { booking?: BookingInterface }) => {
+  const router = useRouter();
+  const id = router.query.id as string;
+
+  const [room, loadingRoom] = useDocument<RoomInterface>(
+    isNew(id)
+      ? undefined
+      : booking?.roomRefrence || createRef(Collection.Rooms, booking?.room?.id)
+  );
+
+  const [customer, loadingCustomer] = useDocument<Customer>(
+    isNew(id)
+      ? undefined
+      : booking?.customerRefrence ||
+          createRef(Collection.Customers, booking?.customer?.id)
+  );
+
+  if (!loadingRoom && !loadingCustomer) {
+    const roomFinal = room
+      ? ({ id: room.id, ...room.data() } as Room)
+      : booking?.room;
+    const customerFinal = customer
+      ? ({ id: customer.id, ...customer.data() } as Customer)
+      : booking?.customer;
+
+    return (
+      <BookingForm
+        booking={booking}
+        room={roomFinal}
+        customer={customerFinal}
+      />
+    );
+  }
 
   return <Loader />;
 };
 
 interface FormValues {
   date: [Date | null, Date | null];
-  room: string;
+  roomRefrence: string;
   btw: string;
   cleaningFee: number | undefined;
   cleaningFeeVat: string;
@@ -107,7 +172,7 @@ interface FormValues {
   parkingFee: number | undefined;
   parkingFeeVat: string;
   touristTax: number | undefined;
-  customer: string;
+  customerRefrence: string;
   priceOverride: number | undefined;
   notes: string;
   extraOne: string | null;
@@ -116,9 +181,16 @@ interface FormValues {
 
 interface BookingFormProps {
   booking?: BookingInterface;
+  room?: RoomInterface;
+  customer?: CustomerInterface;
 }
 
-const BookingForm = ({ booking }: BookingFormProps) => {
+const BookingForm = ({ booking, room, customer }: BookingFormProps) => {
+  room = room || booking?.room;
+  customer = customer || booking?.customer;
+
+  console.log(room, customer);
+
   const router = useRouter();
   const id = router.query.id as string;
   const [invoicePeriod, setInvoicePeriod] = useState<
@@ -171,7 +243,7 @@ const BookingForm = ({ booking }: BookingFormProps) => {
       date: booking
         ? [booking.start.toDate(), booking.end.toDate()]
         : [null, null],
-      room: booking?.room.id || "",
+      roomRefrence: booking?.roomRefrence?.id || room?.id || "",
       btw: booking?.btw.toString() || "9",
       cleaningFee: booking?.cleaningFee || undefined,
       cleaningFeeVat: booking?.cleaningFeeVat.toString() || "21",
@@ -181,7 +253,7 @@ const BookingForm = ({ booking }: BookingFormProps) => {
       parkingFee: booking?.parkingFee || undefined,
       parkingFeeVat: booking?.parkingFeeVat.toString() || "21",
       touristTax: booking?.touristTax || undefined,
-      customer: booking?.customer.id || "",
+      customerRefrence: booking?.customerRefrence?.id || customer?.id || "",
       priceOverride: booking?.priceOverride || undefined,
       notes: booking?.notes || "",
       extraOne: booking?.extraOne || "",
@@ -190,7 +262,7 @@ const BookingForm = ({ booking }: BookingFormProps) => {
   });
 
   const submitHandler = async (values: FormValues) => {
-    if (!values.date[1] || !values.room || !values.customer) {
+    if (!values.date[1] || !values.roomRefrence || !values.customerRefrence) {
       showNotification({
         color: "red",
         message: "Vul alle verplichte velden in",
@@ -200,7 +272,7 @@ const BookingForm = ({ booking }: BookingFormProps) => {
 
     const q = query(
       collection(firestore, Collection.Bookings),
-      where("room.id", "==", values.room)
+      where("room.id", "==", values.roomRefrence)
     );
 
     const querySnapshot = await getDocs(q);
@@ -217,19 +289,22 @@ const BookingForm = ({ booking }: BookingFormProps) => {
     });
 
     const book = async () => {
-      const room = rooms?.find(({ id }) => id === values.room);
-      if (room) delete room._ref;
-
-      const customer = customers?.find(({ id }) => id === values.customer);
-      if (customer) delete customer._ref;
-
       const bookingToSend = {
         ...values,
         invoices: booking?.invoices ?? [],
         start: values.date[0] && Timestamp.fromDate(values.date[0]),
         end: values.date[1] && Timestamp.fromDate(values.date[1]),
-        room: room ?? booking?.room,
-        customer: customer ?? booking?.customer,
+        roomRefrence: createRef(Collection.Rooms, values.roomRefrence),
+        customerRefrence: createRef(
+          Collection.Customers,
+          values.customerRefrence
+        ),
+        invoicedTill:
+          booking?.invoicedTill ||
+          (values.date[0] &&
+            Timestamp.fromDate(
+              new Date(values.date[0].setDate(values.date[0].getDate() - 1))
+            )),
         priceOverride: values.priceOverride ?? 0,
         cleaningFee: values.cleaningFee ?? 0,
         parkingFee: values.parkingFee ?? 0,
@@ -276,7 +351,15 @@ const BookingForm = ({ booking }: BookingFormProps) => {
   };
 
   const createInvoiceHandler = async () => {
-    if (!invoicePeriod[0] || !invoicePeriod[1] || !settings || !booking) return;
+    if (
+      !invoicePeriod[0] ||
+      !invoicePeriod[1] ||
+      !settings ||
+      !booking ||
+      !room ||
+      !customer
+    )
+      return;
 
     await setDoc(doc(firestore, Collection.Settings, settings.id), {
       ...settings,
@@ -285,23 +368,104 @@ const BookingForm = ({ booking }: BookingFormProps) => {
 
     const bookingRef = doc(firestore, Collection.Bookings, id);
 
+    const isLastInvoice = compareDates(booking.end.toDate(), invoicePeriod[1]);
+    const invoiceNights = calcNights(invoicePeriod[1], invoicePeriod[0]);
+
+    const lines: InvoiceLine[] = [
+      {
+        name: "Overnight stays",
+        ...calcAll({
+          unitPrice: booking.priceOverride || room.price,
+          quantity: invoiceNights,
+          vatPercentage: parseInt(booking.btw),
+        }),
+      },
+    ];
+
+    if (booking.touristTax)
+      lines.push({
+        name: "Tourist tax",
+        ...calcAll({
+          unitPrice: booking.touristTax,
+          quantity: invoiceNights,
+          vatPercentage: 0,
+        }),
+      });
+
+    if (booking.parkingFee)
+      lines.push({
+        name: "Parking fee",
+        ...calcAll({
+          unitPrice: booking.parkingFee,
+          quantity: invoiceNights,
+          vatPercentage: parseInt(booking.parkingFeeVat),
+        }),
+      });
+
+    if (booking.cleaningFee && isLastInvoice)
+      lines.push({
+        name: "Final cleaning",
+        ...calcAll({
+          unitPrice: booking.cleaningFee,
+          quantity: 1,
+          vatPercentage: parseInt(booking.cleaningFeeVat),
+        }),
+      });
+
     const invoiceRef = await addDoc(
       collection(firestore, Collection.Invoices),
       {
-        booking: bookingRef,
-        type: InvoiceType.Normal,
+        type: isLastInvoice ? InvoiceType.Last : InvoiceType.Normal,
         number: getInvoiceNumber(settings.invoices),
         date: Timestamp.fromDate(new Date()),
         from: Timestamp.fromDate(invoicePeriod[0]),
         to: Timestamp.fromDate(invoicePeriod[1]),
         mailedOn: null,
         creditedOn: null,
+        roomName: room.name,
+        extra: booking.extraTwo,
+        company: {
+          name: settings.companyName,
+          adres: `${settings.street} ${settings.houseNumber}`,
+          postalCode: settings.postalCode,
+          city: settings.city,
+          email: settings.email,
+          phoneNumber: settings.phoneNumber,
+          cocNumber: settings.kvkNumber,
+          vatNumber: settings.btwNumber,
+          bicCode: settings.bicCode,
+          iban: settings.iban,
+        },
+        customer: {
+          name:
+            booking.extraOne || customer.secondName
+              ? `${customer.name} - ${booking.extraOne || customer.secondName}`
+              : customer.name,
+          adres: `${customer.street} ${customer.houseNumber}`,
+          postalCode: customer.postalCode,
+          city: customer.city,
+          email: customer.email,
+          phoneNumber: customer.phoneNumber,
+        },
+        terms:
+          "We kindly request that you transfer the amount due within 14 days",
+        bookingRefrence: bookingRef,
+        lines,
       } as Invoice
     );
 
-    await updateDoc(bookingRef, {
+    const updatedBooking = {
       invoices: [...booking.invoices, invoiceRef],
-    });
+    };
+
+    if (
+      booking.invoicedTill &&
+      booking.invoicedTill.toDate().getTime() < invoicePeriod[1].getTime()
+    )
+      // @ts-ignore
+      updatedBooking["invoicedTill"] = Timestamp.fromDate(invoicePeriod[1]);
+
+    await updateDoc(bookingRef, updatedBooking);
 
     setInvoicePeriod([null, null]);
 
@@ -374,7 +538,7 @@ const BookingForm = ({ booking }: BookingFormProps) => {
           placeholder="Klant"
           searchable
           data={customerSelectData ?? []}
-          {...form.getInputProps("customer")}
+          {...form.getInputProps("customerRefrence")}
         />
         <Select
           required
@@ -383,7 +547,7 @@ const BookingForm = ({ booking }: BookingFormProps) => {
           placeholder="Kamer"
           searchable
           data={roomSelectData ?? []}
-          {...form.getInputProps("room")}
+          {...form.getInputProps("roomRefrence")}
         />
         <Select
           required
@@ -462,13 +626,14 @@ const BookingForm = ({ booking }: BookingFormProps) => {
           label="Schoonmaak opmerkingen"
           placeholder="Schoonmaak opmerkingen"
           {...form.getInputProps("cleaningNotes")}
+          autosize
         />
         <NumberInput
           min={0}
           noClampOnBlur
           decimalSeparator=","
           icon="€"
-          label="Parkeerkosten"
+          label="Parkeerkosten per nacht"
           placeholder="Parkeerkosten"
           {...form.getInputProps("parkingFee")}
         />
@@ -512,15 +677,16 @@ const BookingForm = ({ booking }: BookingFormProps) => {
           label="Opmerkingen"
           placeholder="Opmerkingen"
           {...form.getInputProps("notes")}
+          autosize
         />
         <TextInput
-          label="Extra 1"
-          placeholder="Extra 1"
+          label="Naam gast"
+          placeholder="Naam gast"
           {...form.getInputProps("extraOne")}
         />
         <TextInput
-          label="Extra 2"
-          placeholder="Extra 2"
+          label="Extra"
+          placeholder="Extra"
           {...form.getInputProps("extraTwo")}
         />
       </form>
@@ -540,6 +706,7 @@ const BookingForm = ({ booking }: BookingFormProps) => {
               onChange={setInvoicePeriod}
               minDate={new Date(booking.start.toDate())}
               maxDate={new Date(booking.end.toDate())}
+              hideOutsideDates
             />
             {invoicePeriod[1] && (
               <Button mt="md" onClick={createInvoiceHandler}>
@@ -619,10 +786,13 @@ const InvoiceOverview = ({
           margin: 8,
         }}
       >
-        <p>
-          Type:{" "}
-          {invoice.type === InvoiceType.Credit ? "Creditfactuur" : "Factuur"}
-        </p>
+        <Group position="apart">
+          <p>
+            Type:{" "}
+            {invoice.type === InvoiceType.Credit ? "Creditfactuur" : "Factuur"}
+          </p>
+          {invoice.type === InvoiceType.Last && <Badge>Eind</Badge>}
+        </Group>
         <p>Nummer: {invoice.number}</p>
         <p>{`Datum: ${invoice.date.toDate().toLocaleDateString("nl-NL")}`}</p>
         <p style={{ whiteSpace: "nowrap" }}>{`Periode: ${invoice.from
@@ -671,7 +841,7 @@ const InvoiceOverview = ({
           <Group mt="xs" noWrap>
             <PDFDownloadLink
               document={
-                <Receipt
+                <DeprecatedReceipt
                   images={{
                     dir: "/assets/images/",
                     header: process.env.NEXT_PUBLIC_INVOICE_HEADER,

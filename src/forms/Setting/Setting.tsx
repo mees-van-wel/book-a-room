@@ -1,4 +1,11 @@
-import { Button, ColorScheme, Group, TextInput, Title } from "@mantine/core";
+import {
+  Button,
+  ColorScheme,
+  Group,
+  NumberInput,
+  TextInput,
+  Title,
+} from "@mantine/core";
 import { useForm } from "@mantine/form";
 import { useLocalStorage } from "@mantine/hooks";
 import { showNotification } from "@mantine/notifications";
@@ -20,19 +27,20 @@ const Setting: FC<FormProps> = ({ settings }) => {
   });
 
   const form = useForm<SettingsInterface>({
-    initialValues: settings ?? {
-      companyName: "",
-      email: "",
-      phoneNumber: "",
-      street: "",
-      houseNumber: "",
-      postalCode: "",
-      city: "",
-      kvkNumber: "",
-      btwNumber: "",
-      bicCode: "",
-      iban: "",
-      id: "",
+    initialValues: {
+      invoices: settings?.invoices ?? undefined,
+      companyName: settings?.companyName ?? "",
+      email: settings?.email ?? "",
+      phoneNumber: settings?.phoneNumber ?? "",
+      street: settings?.street ?? "",
+      houseNumber: settings?.houseNumber ?? "",
+      postalCode: settings?.postalCode ?? "",
+      city: settings?.city ?? "",
+      kvkNumber: settings?.kvkNumber ?? "",
+      btwNumber: settings?.btwNumber ?? "",
+      bicCode: settings?.bicCode ?? "",
+      iban: settings?.iban ?? "",
+      id: settings?.id ?? "",
     },
   });
 
@@ -59,6 +67,11 @@ const Setting: FC<FormProps> = ({ settings }) => {
           <Title>Instellingen</Title>
           {isDirty && <Button type="submit">Opslaan</Button>}
         </Group>
+        <NumberInput
+          label="Factuurnummer"
+          placeholder="Factuurnummer"
+          {...form.getInputProps("invoices")}
+        />
         <TextInput
           required
           label="Bedrijfsnaam"
