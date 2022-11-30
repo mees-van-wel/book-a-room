@@ -189,8 +189,6 @@ const BookingForm = ({ booking, room, customer }: BookingFormProps) => {
   room = room || booking?.room;
   customer = customer || booking?.customer;
 
-  console.log(room, customer);
-
   const router = useRouter();
   const id = router.query.id as string;
   const [invoicePeriod, setInvoicePeriod] = useState<
@@ -733,7 +731,8 @@ const BookingForm = ({ booking, room, customer }: BookingFormProps) => {
                   <InvoiceOverview
                     key={index}
                     invoiceData={invoice}
-                    booking={booking}
+                    // @ts-ignore
+                    booking={{ ...booking, room, customer }}
                     settings={settings}
                     onDelete={() => {
                       openConfirmModal({
