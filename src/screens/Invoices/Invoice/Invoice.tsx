@@ -164,7 +164,7 @@ const NewInvoice = ({ invoice }: NewInvoiceProps) => {
   const mailHandler = () => {
     window
       ?.open(
-        `https://outlook.office.com/mail/deeplink/compose?to=${invoice.customer.email}&subject=Invoice&body=Dear%20customer%2C%0A%0AAttached%20you%20will%20find%20your%20invoice.%0A%0AKind%20regards%2C%0A%0ATeam%20${invoice.company.name}`,
+        `https://outlook.office.com/mail/deeplink/compose?to=${invoice.customer.email},${process.env.NEXT_PUBLIC_SMTP_BCC}&subject=Invoice&body=Dear%20customer%2C%0A%0AAttached%20you%20will%20find%20your%20invoice.%0A%0AKind%20regards%2C%0A%0ATeam%20${invoice.company.name}`,
         "_blank"
       )
       ?.focus();
