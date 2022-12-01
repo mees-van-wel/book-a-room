@@ -300,6 +300,7 @@ const BookingForm = ({ booking, room, customer }: BookingFormProps) => {
         invoicedTill:
           booking?.invoicedTill ||
           (values.date[0] &&
+            isNew(id) &&
             Timestamp.fromDate(
               new Date(values.date[0].setDate(values.date[0].getDate() - 1))
             )),
