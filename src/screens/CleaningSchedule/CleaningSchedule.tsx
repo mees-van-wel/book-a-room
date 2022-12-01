@@ -1,6 +1,6 @@
 import { Button, Loader } from "@mantine/core";
 import { useRouter } from "next/router";
-import { ReactElement, useMemo } from "react";
+import { ReactElement, useEffect, useMemo, useState } from "react";
 import { NextPageWithLayout } from "../../../pages/_app";
 import Calendar from "../../components/Calendar";
 import { Collection } from "../../enums/collection.enum";
@@ -12,10 +12,13 @@ import Dashboard from "../../layouts/Dashboard";
 import duration from "dayjs/plugin/duration";
 import dayjs from "dayjs";
 import { CleaningInterval } from "../../enums/cleaningInterval.enum";
+import { getCustomer, getRoom } from "../Bookings";
+import { useDidUpdate } from "@mantine/hooks";
 
 dayjs.extend(duration);
 
 export const CleaningSchedule: NextPageWithLayout = () => {
+  const [events, setEvents] = useState<CalendarEvent[]>();
   const { documents: bookings } = useFirestoreDocuments<Booking>(
     Collection.Bookings,
     true
@@ -23,44 +26,58 @@ export const CleaningSchedule: NextPageWithLayout = () => {
 
   const router = useRouter();
 
-  const events = useMemo(
-    () =>
-      bookings?.reduce<CalendarEvent[]>((array, current) => {
-        if (!!current.cleaningInterval && !!current.cleaningStartDate) {
-          const weeks = dayjs
-            .duration(
-              current.end.toDate().getTime() - current.start.toDate().getTime()
-            )
-            .asWeeks();
+  useDidUpdate(() => {
+    if (!bookings) return;
 
-          const interval =
-            current.cleaningInterval === CleaningInterval.BiWeekly
-              ? weeks / 2
-              : weeks;
-
-          for (let i = 0; i < interval; i++) {
-            const date = dayjs(current.cleaningStartDate.toDate())
-              .add(
-                current.cleaningInterval === CleaningInterval.BiWeekly
-                  ? i * 2
-                  : i,
-                "week"
+    (async () => {
+      const formatted = await Promise.all(
+        bookings.reduce<Promise<CalendarEvent>[]>((array, current) => {
+          if (!!current.cleaningInterval && !!current.cleaningStartDate) {
+            const weeks = dayjs
+              .duration(
+                current.end.toDate().getTime() -
+                  current.start.toDate().getTime()
               )
-              .toDate();
+              .asWeeks();
 
-            array.push({
-              id: current.id,
-              title: current.cleaningNotes ?? "",
-              start: date,
-              end: date,
-              roomName: current.room.name,
-            });
+            const interval =
+              current.cleaningInterval === CleaningInterval.BiWeekly
+                ? weeks / 2
+                : weeks;
+
+            for (let i = 0; i < interval; i++) {
+              const date = dayjs(current.cleaningStartDate.toDate())
+                .add(
+                  current.cleaningInterval === CleaningInterval.BiWeekly
+                    ? i * 2
+                    : i,
+                  "week"
+                )
+                .toDate();
+
+              const fn = async () => {
+                const room = await getRoom(current);
+
+                return {
+                  id: current.id,
+                  title: current.cleaningNotes ?? "",
+                  start: date,
+                  end: date,
+                  roomName: room?.name,
+                } as CalendarEvent;
+              };
+
+              array.push(fn());
+            }
           }
-        }
-        return array;
-      }, []),
-    [bookings]
-  );
+
+          return array;
+        }, [])
+      );
+
+      setEvents(formatted);
+    })();
+  }, [bookings]);
 
   if (!events) return <Loader />;
 
