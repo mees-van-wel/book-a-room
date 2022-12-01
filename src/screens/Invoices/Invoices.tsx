@@ -1,7 +1,8 @@
 import { Group, Loader, Table, Title } from "@mantine/core";
+import { useDidUpdate } from "@mantine/hooks";
 import firebase from "firebase/compat";
 import { useRouter } from "next/router";
-import { ReactElement } from "react";
+import { ReactElement, useEffect, useState } from "react";
 import { useDocumentData } from "react-firebase-hooks/firestore";
 import { NextPageWithLayout } from "../../../pages/_app";
 import { Collection } from "../../enums/collection.enum";
@@ -9,8 +10,11 @@ import { InvoiceType } from "../../enums/invoiceType.enum";
 import { Route } from "../../enums/route.enum";
 import useFirestoreDocuments from "../../hooks/useFirestoreDocuments";
 import { Booking } from "../../interfaces/booking.interface";
+import { Customer } from "../../interfaces/customer.interface";
 import { Invoice } from "../../interfaces/invoice.interface";
+import { Room } from "../../interfaces/room.interface";
 import Dashboard from "../../layouts/Dashboard";
+import { getCustomer, getRoom } from "../Bookings";
 
 import DocumentReference = firebase.firestore.DocumentReference;
 
@@ -105,14 +109,28 @@ const DeprecatedBookingDetails = ({
 }: DeprecatedBookingDetailsProps) => {
   // @ts-ignore
   const [booking] = useDocumentData<Booking>(bookingRef);
+  const [room, setRoom] = useState<Room>();
+  const [customer, setCustomer] = useState<Customer>();
 
-  if (booking)
+  useDidUpdate(() => {
+    if (!booking) return;
+
+    (async () => {
+      const room = await getRoom(booking);
+      if (room) setRoom(room);
+
+      const customer = await getCustomer(booking);
+      if (customer) setCustomer(customer);
+    })();
+  }, [booking]);
+
+  if (booking && room && customer)
     return (
       <>
-        <td>{booking.room.name}</td>
+        <td>{room.name}</td>
         <td>
-          {booking.customer.name}
-          {booking.customer.secondName && ` - ${booking.customer.secondName}`}
+          {customer.name}
+          {customer.secondName && ` - ${customer.secondName}`}
         </td>
       </>
     );
