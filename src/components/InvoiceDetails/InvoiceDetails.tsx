@@ -2,6 +2,7 @@ import { Table } from "@mantine/core";
 import { FC } from "react";
 import { Booking } from "../../interfaces/booking.interface";
 import { Invoice } from "../../interfaces/invoice.interface";
+import { Room } from "../../interfaces/room.interface";
 import { compareDates } from "../../screens/Bookings/Booking";
 import { bookingCalculator } from "../../utils/bookingCalculator";
 import currency from "../../utils/currency";
@@ -9,11 +10,13 @@ import currency from "../../utils/currency";
 interface InvoiceDetailsProps {
   invoice: Invoice;
   booking: Booking;
+  room: Room;
 }
 
 export const InvoiceDetails: FC<InvoiceDetailsProps> = ({
   invoice,
   booking,
+  room: roomData,
 }) => {
   const isLastInvoice = compareDates(booking.end.toDate(), invoice.to.toDate());
 
@@ -32,7 +35,7 @@ export const InvoiceDetails: FC<InvoiceDetailsProps> = ({
     fromDate: invoice.from.toDate(),
     toDate: invoice.to.toDate(),
     touristTax: booking.touristTax,
-    roomPrice: booking.room.price,
+    roomPrice: roomData.price,
     roomvatPercentage: parseInt(booking.btw),
     cleaningPrice: booking.cleaningFee,
     cleaningVatPercentage: parseInt(booking.cleaningFeeVat),
@@ -60,7 +63,7 @@ export const InvoiceDetails: FC<InvoiceDetailsProps> = ({
         <tbody>
           <tr>
             <td>
-              {booking.room.name} (
+              {roomData.name} (
               {invoice.from.toDate().toLocaleDateString("Nl-nl")}
               {" - "}
               {invoice.to.toDate().toLocaleDateString("Nl-nl")})

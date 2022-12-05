@@ -1,4 +1,5 @@
 import { Button, Group, Loader, Table, Title } from "@mantine/core";
+import { useDidUpdate } from "@mantine/hooks";
 import { openConfirmModal } from "@mantine/modals";
 import { showNotification } from "@mantine/notifications";
 import { PDFDownloadLink } from "@react-pdf/renderer";
@@ -16,7 +17,7 @@ import {
 } from "firebase/firestore";
 import Link from "next/link";
 import { useRouter } from "next/router";
-import { ReactElement, useMemo } from "react";
+import { ReactElement, useMemo, useState } from "react";
 import { useDocument, useDocumentData } from "react-firebase-hooks/firestore";
 import { NextPageWithLayout } from "../../../../pages/_app";
 import { InvoiceDetails } from "../../../components/InvoiceDetails";
@@ -25,7 +26,9 @@ import { InvoiceType } from "../../../enums/invoiceType.enum";
 import { Route } from "../../../enums/route.enum";
 import useFirestoreDocuments from "../../../hooks/useFirestoreDocuments";
 import { Booking } from "../../../interfaces/booking.interface";
+import { Customer } from "../../../interfaces/customer.interface";
 import { Invoice as InvoiceInterface } from "../../../interfaces/invoice.interface";
+import { Room } from "../../../interfaces/room.interface";
 import { SettingsInterface } from "../../../interfaces/Settings";
 import Dashboard from "../../../layouts/Dashboard";
 import { firestore } from "../../../lib/firebase";
@@ -33,6 +36,7 @@ import { createRef } from "../../../utils/createRef.utility";
 import currency from "../../../utils/currency";
 import { generateRoute } from "../../../utils/generateRoute.utility";
 import getInvoiceNumber from "../../../utils/invoiceNumber";
+import { getCustomer, getRoom } from "../../Bookings";
 import { calcNights } from "../../Bookings/Booking";
 import { DeprecatedReceipt } from "../DeprecatedReceipt";
 import { Receipt } from "../Receipt";
@@ -368,6 +372,8 @@ interface DeprecatedInvoiceProps {
 
 const DeprecatedInvoice = ({ invoice }: DeprecatedInvoiceProps) => {
   const router = useRouter();
+  const [room, setRoom] = useState<Room>();
+  const [customer, setCustomer] = useState<Customer>();
   const invoiceId = router.query.id as string;
   // @ts-ignore
   const bookingRef = invoice.booking as unknown as DocumentReference<Booking>;
@@ -375,6 +381,22 @@ const DeprecatedInvoice = ({ invoice }: DeprecatedInvoiceProps) => {
   const [bookingSnapshot] = useDocument<Booking>(bookingRef);
 
   const booking = bookingSnapshot?.data();
+
+  useDidUpdate(() => {
+    if (!booking) return;
+
+    (async () => {
+      const [room, customer] = await Promise.all([
+        getRoom(booking),
+        getCustomer(booking),
+      ]);
+
+      if (!room || !customer) return;
+
+      setRoom(room);
+      setCustomer(customer);
+    })();
+  }, [booking]);
 
   const { documents: settingsArray } = useFirestoreDocuments<SettingsInterface>(
     Collection.Settings,
@@ -415,6 +437,8 @@ const DeprecatedInvoice = ({ invoice }: DeprecatedInvoiceProps) => {
     [invoice?.from, invoice?.to]
   );
 
+  if (!customer || !room) return <Loader />;
+
   return (
     <div>
       <Group mb="md">
@@ -444,7 +468,7 @@ const DeprecatedInvoice = ({ invoice }: DeprecatedInvoiceProps) => {
                     }}
                     invoice={invoice}
                     settings={settings}
-                    booking={booking}
+                    booking={{ ...booking, room, customer }}
                   />
                 }
                 fileName={`${
@@ -518,14 +542,13 @@ const DeprecatedInvoice = ({ invoice }: DeprecatedInvoiceProps) => {
           <>
             <tr>
               <td>Kamer:</td>
-              <td>{booking.room.name}</td>
+              <td>{room.name}</td>
             </tr>
             <tr>
               <td>Klant:</td>
               <td>
-                {booking.customer.name}
-                {booking.customer.secondName &&
-                  ` - ${booking.customer.secondName}`}
+                {customer.name}
+                {customer.secondName && ` - ${customer.secondName}`}
               </td>
             </tr>
             {invoice.mailedOn && (
@@ -543,8 +566,8 @@ const DeprecatedInvoice = ({ invoice }: DeprecatedInvoiceProps) => {
           </>
         )}
       </table>
-      {booking ? (
-        <InvoiceDetails invoice={invoice} booking={booking} />
+      {booking && room ? (
+        <InvoiceDetails room={room} invoice={invoice} booking={booking} />
       ) : (
         <p>De bijbehorende boeking is verwijderd.</p>
       )}
