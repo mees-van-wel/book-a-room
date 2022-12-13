@@ -214,11 +214,7 @@ const Calendar: FC<CalendarProps> = ({
                           verticalAlign: "top",
                         }}
                       >
-                        <div
-                          style={{
-                            display: "flex",
-                          }}
-                        >
+                        <div>
                           {!!event.length &&
                             event.map((e, i) => {
                               const isOne = calcNights(e.end, e.start) === 0;
@@ -258,15 +254,10 @@ const Calendar: FC<CalendarProps> = ({
                                     color: "white",
                                     fontSize: 14,
                                     textAlign: full ? "left" : "center",
-                                    width: "calc(50% - 4px)",
                                     opacity,
                                     height: !e.title ? "30px" : undefined,
                                     marginLeft: isStart ? "auto" : -1,
-                                    flexGrow: isOne
-                                      ? 1
-                                      : isStart || isEnd
-                                      ? 0
-                                      : 1,
+                                    width: "100%",
                                     marginRight: -1,
                                     marginTop: 8,
                                     marginBottom: 8,
