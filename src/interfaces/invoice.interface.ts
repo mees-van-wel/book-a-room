@@ -43,6 +43,7 @@ export interface Invoice {
     city: string;
     email: string;
     phoneNumber: string;
+    extra: string;
   };
   mailedOn: Timestamp | null;
   creditedOn: Timestamp | null;

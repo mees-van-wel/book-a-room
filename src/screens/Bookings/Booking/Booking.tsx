@@ -270,7 +270,11 @@ const BookingForm = ({ booking, room, customer }: BookingFormProps) => {
 
     const q = query(
       collection(firestore, Collection.Bookings),
-      where("room.id", "==", values.roomRefrence)
+      where(
+        "roomRefrence",
+        "==",
+        createRef(Collection.Rooms, values.roomRefrence)
+      )
     );
 
     const querySnapshot = await getDocs(q);
@@ -445,6 +449,7 @@ const BookingForm = ({ booking, room, customer }: BookingFormProps) => {
           city: customer.city,
           email: customer.email,
           phoneNumber: customer.phoneNumber,
+          extra: customer.extra,
         },
         terms:
           "We kindly request that you transfer the amount due within 14 days",
