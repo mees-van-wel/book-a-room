@@ -449,6 +449,7 @@ const BookingForm = ({ booking, room, customer }: BookingFormProps) => {
           city: customer.city,
           email: customer.email,
           phoneNumber: customer.phoneNumber,
+          extra: customer.extra,
         },
         terms:
           "We kindly request that you transfer the amount due within 14 days",

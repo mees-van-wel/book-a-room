@@ -98,6 +98,11 @@ export const Receipt = ({ images, invoice }: ReceiptProps) => {
                 .toDate()
                 .toLocaleDateString("Nl-nl")}`}
             </Text>
+            {invoice.customer.extra ? (
+              <Text>{invoice.customer.extra}</Text>
+            ) : (
+              <Text />
+            )}
             {invoice.extra ? <Text>{invoice.extra}</Text> : <Text />}
           </View>
           <InvoiceItemsTable invoice={invoice} />
