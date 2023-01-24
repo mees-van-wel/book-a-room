@@ -270,7 +270,11 @@ const BookingForm = ({ booking, room, customer }: BookingFormProps) => {
 
     const q = query(
       collection(firestore, Collection.Bookings),
-      where("room.id", "==", values.roomRefrence)
+      where(
+        "roomRefrence",
+        "==",
+        createRef(Collection.Rooms, values.roomRefrence)
+      )
     );
 
     const querySnapshot = await getDocs(q);
