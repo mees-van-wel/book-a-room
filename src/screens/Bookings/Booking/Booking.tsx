@@ -331,7 +331,7 @@ const BookingForm = ({ booking, room, customer }: BookingFormProps) => {
       });
     };
 
-    if (overlaps && !booking)
+    if (overlaps)
       openConfirmModal({
         title: "De kamer is al geboekt op deze datum, wil je doorgaan?",
         labels: { confirm: "Ja", cancel: "Nee" },
