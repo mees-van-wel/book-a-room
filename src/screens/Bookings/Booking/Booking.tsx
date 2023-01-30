@@ -710,7 +710,6 @@ const BookingForm = ({ booking, room, customer }: BookingFormProps) => {
               onChange={setInvoicePeriod}
               minDate={new Date(booking.start.toDate())}
               maxDate={new Date(booking.end.toDate())}
-              hideOutsideDates
             />
             {invoicePeriod[1] && (
               <Button mt="md" onClick={createInvoiceHandler}>
