@@ -234,7 +234,7 @@ const NewInvoice = ({ invoice }: NewInvoiceProps) => {
               Factureren
             </Button>
           </PDFDownloadLink>
-          {invoice.type === InvoiceType.Normal && (
+          {invoice.type !== InvoiceType.Credit && (
             <Button
               variant={invoice.creditedOn ? "light" : undefined}
               onClick={() => {
