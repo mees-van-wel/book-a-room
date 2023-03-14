@@ -11,7 +11,7 @@ import {
   TextInput,
   Title,
 } from "@mantine/core";
-import { DatePicker, DateRangePicker } from "@mantine/dates";
+import { DatePickerInput } from "@mantine/dates";
 import { useForm } from "@mantine/form";
 import dayjs from "dayjs";
 import {
@@ -519,7 +519,8 @@ const BookingForm = ({ booking, room, customer }: BookingFormProps) => {
             </Button>
           )}
         </Group>
-        <DateRangePicker
+        <DatePickerInput
+          type="range"
           required
           clearable={false}
           label="Datum"
@@ -614,7 +615,7 @@ const BookingForm = ({ booking, room, customer }: BookingFormProps) => {
           {...form.getInputProps("cleaningInterval")}
         />
         {
-          <DatePicker
+          <DatePickerInput
             label="Schoonmaak startdatum"
             placeholder="Schoonmaak startdatum"
             {...form.getInputProps("cleaningStartDate")}
@@ -702,7 +703,8 @@ const BookingForm = ({ booking, room, customer }: BookingFormProps) => {
         >
           <Group>
             <Title>Facturen</Title>
-            <DateRangePicker
+            <DatePickerInput
+              type="range"
               mt="md"
               placeholder="Factureer periode"
               locale="nl"
