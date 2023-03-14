@@ -1,5 +1,5 @@
 import { Button, Group } from "@mantine/core";
-import { DatePicker, getMonthDays } from "@mantine/dates";
+import { DatePickerInput, getMonthDays } from "@mantine/dates";
 import { useLocalStorage } from "@mantine/hooks";
 import dayjs from "dayjs";
 import isBetween from "dayjs/plugin/isBetween";
@@ -46,12 +46,11 @@ const Calendar: FC<CalendarProps> = ({
 
   const date = useMemo(() => new Date(dateString), [dateString]);
 
-  const firstDayOfWeek = "monday";
   const { documents: allRooms } = useFirestoreDocuments<RoomInterface>(
     Collection.Rooms
   );
 
-  const days = getMonthDays(date, firstDayOfWeek);
+  const days = getMonthDays(date, 1);
 
   const currentWeek = useMemo(
     () =>
@@ -131,7 +130,7 @@ const Calendar: FC<CalendarProps> = ({
               Volgende week
             </Button>
           </Button.Group>
-          <DatePicker
+          <DatePickerInput
             locale="nl"
             value={date}
             onChange={(value) => {

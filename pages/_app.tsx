@@ -2,7 +2,7 @@ import "../styles/globals.css";
 import type { AppProps } from "next/app";
 import { ReactElement, ReactNode } from "react";
 import { NextPage } from "next";
-import { NotificationsProvider } from "@mantine/notifications";
+import { Notifications } from "@mantine/notifications";
 import { ColorScheme, MantineProvider } from "@mantine/core";
 import Head from "next/head";
 import { useDidUpdate, useLocalStorage } from "@mantine/hooks";
@@ -51,9 +51,8 @@ export default function App({ Component, pageProps }: AppPropsWithLayout) {
         }}
       >
         <ModalsProvider>
-          <NotificationsProvider position="top-right">
-            {getLayout(<Component {...pageProps} />)}
-          </NotificationsProvider>
+          <Notifications position="top-right" />
+          {getLayout(<Component {...pageProps} />)}
         </ModalsProvider>
       </MantineProvider>
     </>
