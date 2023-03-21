@@ -579,6 +579,7 @@ const BookingForm = ({ booking, room, customer }: BookingFormProps) => {
         <NumberInput
           min={0}
           noClampOnBlur
+          precision={2}
           decimalSeparator=","
           icon="€"
           label="Schoonmaakkosten"
@@ -636,6 +637,7 @@ const BookingForm = ({ booking, room, customer }: BookingFormProps) => {
         <NumberInput
           min={0}
           noClampOnBlur
+          precision={2}
           decimalSeparator=","
           icon="€"
           label="Parkeerkosten per nacht"
@@ -663,6 +665,7 @@ const BookingForm = ({ booking, room, customer }: BookingFormProps) => {
         <NumberInput
           min={0}
           noClampOnBlur
+          precision={2}
           decimalSeparator=","
           icon="€"
           label="Toeristenbelasting per nacht"
@@ -672,6 +675,7 @@ const BookingForm = ({ booking, room, customer }: BookingFormProps) => {
         <NumberInput
           min={0}
           noClampOnBlur
+          precision={2}
           decimalSeparator=","
           icon="€"
           label="Aangepaste prijs"
