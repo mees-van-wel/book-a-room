@@ -217,7 +217,7 @@ const Dashboard = ({ children }: { children: ReactNode }) => {
             Hexa-IT
           </Anchor>
           {" - "}
-          Version 1.1.6
+          Version 1.2.0
         </Text>
       </div>
     </AppShell>

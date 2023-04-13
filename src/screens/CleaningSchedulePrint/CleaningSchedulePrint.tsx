@@ -1,5 +1,5 @@
 import { Loader } from "@mantine/core";
-import { useEffect, useMemo } from "react";
+import { ReactElement, useEffect, useMemo } from "react";
 import { NextPageWithLayout } from "../../../pages/_app";
 import Calendar from "../../components/Calendar";
 import { Collection } from "../../enums/collection.enum";
@@ -9,11 +9,13 @@ import duration from "dayjs/plugin/duration";
 import dayjs from "dayjs";
 import { Booking } from "../../interfaces/booking.interface";
 import { CleaningInterval } from "../../enums/cleaningInterval.enum";
+import { useDidUpdate } from "@mantine/hooks";
+import Dashboard from "../../layouts/Dashboard";
 
 dayjs.extend(duration);
 
 export const CleaningSchedulePrint: NextPageWithLayout = () => {
-  const { documents: bookings } = useFirestoreDocuments<Booking>(
+  const { documents: bookings, loading } = useFirestoreDocuments<Booking>(
     Collection.Bookings,
     true
   );
@@ -48,7 +50,7 @@ export const CleaningSchedulePrint: NextPageWithLayout = () => {
               title: current.cleaningNotes ?? "",
               start: date,
               end: date,
-              roomName: current.room.name,
+              roomName: current?.room?.name,
             });
           }
         }
@@ -64,9 +66,16 @@ export const CleaningSchedulePrint: NextPageWithLayout = () => {
       }, 1000);
   }, [events]);
 
-  return !events ? (
+  console.log(bookings);
+
+  return !bookings || loading ? (
     <Loader />
   ) : (
-    <Calendar lsKey="calendar-cleaning-schedule" events={events} full />
+    <p>asdS</p>
+    // <Calendar lsKey="calendar-cleaning-schedule" events={events} full />
   );
 };
+
+CleaningSchedulePrint.getLayout = (page: ReactElement) => (
+  <Dashboard>{page}</Dashboard>
+);

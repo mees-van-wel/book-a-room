@@ -12,7 +12,7 @@ import Dashboard from "../../layouts/Dashboard";
 import duration from "dayjs/plugin/duration";
 import dayjs from "dayjs";
 import { CleaningInterval } from "../../enums/cleaningInterval.enum";
-import { getCustomer, getRoom } from "../Bookings";
+import { getRoom } from "../Bookings";
 import { useDidUpdate } from "@mantine/hooks";
 
 dayjs.extend(duration);
@@ -100,7 +100,8 @@ export const CleaningSchedule: NextPageWithLayout = () => {
         mt="md"
         className="no-print"
         onClick={() => {
-          window.open("/cleaning-schedule-print", "_blank");
+          window.print();
+          // window.open("/cleaning-schedule-print", "_blank");
         }}
       >
         Print

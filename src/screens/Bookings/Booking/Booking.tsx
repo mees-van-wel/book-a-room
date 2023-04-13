@@ -738,7 +738,7 @@ const BookingForm = ({ booking, room, customer }: BookingFormProps) => {
                   display: "flex",
                 }}
               >
-                {booking.invoices?.map((invoice, index) => (
+                {booking.invoices?.reverse().map((invoice, index) => (
                   <InvoiceOverview
                     key={index}
                     invoiceData={invoice}
