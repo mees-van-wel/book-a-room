@@ -72,11 +72,11 @@ export const Invoices: NextPageWithLayout = () => {
                       </td>
                       <td>{invoice.number}</td>
                       <td>
-                        {invoice.date.toDate().toLocaleDateString("Nl-nl")}
+                        {invoice.date.toDate().toLocaleDateString("nl-NL")}
                       </td>
                       <td>
-                        Van {invoice.from.toDate().toLocaleDateString("Nl-nl")}{" "}
-                        tot {invoice.to.toDate().toLocaleDateString("Nl-nl")}
+                        Van {invoice.from.toDate().toLocaleDateString("nl-NL")}{" "}
+                        tot {invoice.to.toDate().toLocaleDateString("nl-NL")}
                       </td>
                       {invoice.lines ? (
                         <>

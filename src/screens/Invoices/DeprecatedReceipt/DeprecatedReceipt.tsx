@@ -152,9 +152,9 @@ export const DeprecatedReceipt = ({
             <View>
               <Text style={styles.header}>Service</Text>
               <Text>
-                {booking.room.name} ({from.toLocaleDateString("Nl-nl")}
+                {booking.room.name} ({from.toLocaleDateString("nl-NL")}
                 {" - "}
-                {to.toLocaleDateString("Nl-nl")})
+                {to.toLocaleDateString("nl-NL")})
               </Text>
               {cleaning && isLastInvoice ? <Text>Cleaning fee</Text> : <Text />}
               {parking ? <Text>Parking costs</Text> : <Text />}

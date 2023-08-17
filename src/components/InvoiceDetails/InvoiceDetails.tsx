@@ -64,9 +64,9 @@ export const InvoiceDetails: FC<InvoiceDetailsProps> = ({
           <tr>
             <td>
               {roomData.name} (
-              {invoice.from.toDate().toLocaleDateString("Nl-nl")}
+              {invoice.from.toDate().toLocaleDateString("nl-NL")}
               {" - "}
-              {invoice.to.toDate().toLocaleDateString("Nl-nl")})
+              {invoice.to.toDate().toLocaleDateString("nl-NL")})
             </td>
             <td>{currency(room.priceWithoutVat)}</td>
             <td>{nights}</td>

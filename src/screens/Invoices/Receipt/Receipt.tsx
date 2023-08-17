@@ -94,9 +94,9 @@ export const Receipt = ({ images, invoice }: ReceiptProps) => {
               Billing period:{" "}
               {`${invoice.from
                 .toDate()
-                .toLocaleDateString("Nl-nl")} - ${invoice.to
+                .toLocaleDateString("nl-NL")} - ${invoice.to
                 .toDate()
-                .toLocaleDateString("Nl-nl")}`}
+                .toLocaleDateString("nl-NL")}`}
             </Text>
             {invoice.customer.extra ? (
               <Text>{invoice.customer.extra}</Text>

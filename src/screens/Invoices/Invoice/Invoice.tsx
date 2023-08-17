@@ -276,13 +276,13 @@ const NewInvoice = ({ invoice }: NewInvoiceProps) => {
         </tr>
         <tr>
           <td>Datum:</td>
-          <td>{invoice.date.toDate().toLocaleDateString("Nl-nl")}</td>
+          <td>{invoice.date.toDate().toLocaleDateString("nl-NL")}</td>
         </tr>
         <tr>
           <td>Periode:</td>
           <td>
-            {invoice.from.toDate().toLocaleDateString("Nl-nl")} {" - "}
-            {invoice.to.toDate().toLocaleDateString("Nl-nl")}
+            {invoice.from.toDate().toLocaleDateString("nl-NL")} {" - "}
+            {invoice.to.toDate().toLocaleDateString("nl-NL")}
           </td>
         </tr>
         {invoiceNights && (
@@ -302,13 +302,13 @@ const NewInvoice = ({ invoice }: NewInvoiceProps) => {
         {invoice.mailedOn && (
           <tr>
             <td>Gefactureerd op:</td>
-            <td>{invoice.mailedOn.toDate().toLocaleString("Nl-nl")}</td>
+            <td>{invoice.mailedOn.toDate().toLocaleString("nl-NL")}</td>
           </tr>
         )}
         {invoice.creditedOn && (
           <tr>
             <td>Gecrediteerd op:</td>
-            <td>{invoice.creditedOn.toDate().toLocaleString("Nl-nl")}</td>
+            <td>{invoice.creditedOn.toDate().toLocaleString("nl-NL")}</td>
           </tr>
         )}
       </table>
@@ -523,13 +523,13 @@ const DeprecatedInvoice = ({ invoice }: DeprecatedInvoiceProps) => {
         </tr>
         <tr>
           <td>Datum:</td>
-          <td>{invoice.date.toDate().toLocaleDateString("Nl-nl")}</td>
+          <td>{invoice.date.toDate().toLocaleDateString("nl-NL")}</td>
         </tr>
         <tr>
           <td>Periode:</td>
           <td>
-            {invoice.from.toDate().toLocaleDateString("Nl-nl")} {" - "}
-            {invoice.to.toDate().toLocaleDateString("Nl-nl")}
+            {invoice.from.toDate().toLocaleDateString("nl-NL")} {" - "}
+            {invoice.to.toDate().toLocaleDateString("nl-NL")}
           </td>
         </tr>
         {invoiceNights && (
@@ -554,13 +554,13 @@ const DeprecatedInvoice = ({ invoice }: DeprecatedInvoiceProps) => {
             {invoice.mailedOn && (
               <tr>
                 <td>Gefactureed op:</td>
-                <td>{invoice.mailedOn.toDate().toLocaleString("Nl-nl")}</td>
+                <td>{invoice.mailedOn.toDate().toLocaleString("nl-NL")}</td>
               </tr>
             )}
             {invoice.creditedOn && (
               <tr>
                 <td>Gecrediteerd op:</td>
-                <td>{invoice.creditedOn.toDate().toLocaleString("Nl-nl")}</td>
+                <td>{invoice.creditedOn.toDate().toLocaleString("nl-NL")}</td>
               </tr>
             )}
           </>
