@@ -1,6 +1,14 @@
-import { Button, Group, Loader, Table, Title } from "@mantine/core";
-import { useDidUpdate } from "@mantine/hooks";
-import { openConfirmModal } from "@mantine/modals";
+import {
+  Button,
+  Group,
+  Loader,
+  Modal,
+  Select,
+  Table,
+  Title,
+} from "@mantine/core";
+import { useDidUpdate, useDisclosure } from "@mantine/hooks";
+import { modals, openConfirmModal } from "@mantine/modals";
 import { showNotification } from "@mantine/notifications";
 import { PDFDownloadLink } from "@react-pdf/renderer";
 import axios from "axios";
@@ -17,7 +25,7 @@ import {
 } from "firebase/firestore";
 import Link from "next/link";
 import { useRouter } from "next/router";
-import { ReactElement, useMemo, useState } from "react";
+import { ReactElement, useEffect, useMemo, useState } from "react";
 import { useDocument, useDocumentData } from "react-firebase-hooks/firestore";
 import { NextPageWithLayout } from "../../../../pages/_app";
 import { InvoiceDetails } from "../../../components/InvoiceDetails";
@@ -40,6 +48,9 @@ import { getCustomer, getRoom } from "../../Bookings";
 import { calcNights } from "../../Bookings/Booking";
 import { DeprecatedReceipt } from "../DeprecatedReceipt";
 import { Receipt } from "../Receipt";
+import { useGlobalContext } from "../../../providers/GlobalProvider";
+import { TwCustomerModal } from "./twCustomerModel";
+import { PRODUCTS } from "../../../constants/products";
 
 export const Invoice: NextPageWithLayout = () => {
   const router = useRouter();
@@ -65,6 +76,8 @@ interface NewInvoiceProps {
 const NewInvoice = ({ invoice }: NewInvoiceProps) => {
   const router = useRouter();
   const invoiceId = router.query.id as string;
+  const [opened, { open, close }] = useDisclosure(false);
+  const { session } = useGlobalContext();
 
   const { documents: settingsArray } = useFirestoreDocuments<SettingsInterface>(
     Collection.Settings,
@@ -178,6 +191,36 @@ const NewInvoice = ({ invoice }: NewInvoiceProps) => {
     });
   };
 
+  const billingHandler = async (customerId: string) => {
+    if (!session) return;
+
+    await axios.post(
+      `/api/create-transaction?accessToken=${session.access_token}`,
+      {
+        lines: invoice.lines.map((line) => ({
+          description: line.name,
+          value: line.totalWithoutVat,
+          ledger:
+            line.name === PRODUCTS.CLEANING
+              ? 803010
+              : line.name === PRODUCTS.PARKING
+              ? 803000
+              : 804000,
+          vatCode: line.vatPercentage === 9 ? "VL" : "VH",
+          vatValue: line.vat,
+        })),
+        total,
+        customerId,
+        invoiceDate: invoice.date.toMillis(),
+        invoiceNumber: invoice.number,
+        credit: invoice.type === InvoiceType.Credit,
+      }
+    );
+
+    close();
+    mailHandler();
+  };
+
   const totalWithoutVat = invoice.lines.reduce(
     (accumulator, { totalWithoutVat }) => accumulator + totalWithoutVat,
     0
@@ -195,6 +238,12 @@ const NewInvoice = ({ invoice }: NewInvoiceProps) => {
 
   return (
     <div>
+      <Modal opened={opened} onClose={close} title="Bevestig klant">
+        <TwCustomerModal
+          customerName={invoice.customer.name.split(" - ")[0].trim()}
+          onConfirm={billingHandler}
+        />
+      </Modal>
       <Group mb="md">
         <Title>
           {invoice.type === InvoiceType.Credit ? "Creditfactuur" : "Factuur"}{" "}
@@ -229,9 +278,9 @@ const NewInvoice = ({ invoice }: NewInvoiceProps) => {
           >
             <Button
               variant={invoice.mailedOn ? "light" : undefined}
-              onClick={mailHandler}
+              onClick={invoice.mailedOn ? mailHandler : open}
             >
-              Factureren
+              {invoice.mailedOn ? "PDF Downloaden" : "Factureren"}
             </Button>
           </PDFDownloadLink>
           {invoice.type !== InvoiceType.Credit && (

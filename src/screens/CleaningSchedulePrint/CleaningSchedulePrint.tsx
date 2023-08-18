@@ -66,8 +66,6 @@ export const CleaningSchedulePrint: NextPageWithLayout = () => {
       }, 1000);
   }, [events]);
 
-  console.log(bookings);
-
   return !bookings || loading ? (
     <Loader />
   ) : (

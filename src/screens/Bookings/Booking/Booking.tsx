@@ -59,6 +59,7 @@ import { CleaningInterval } from "../../../enums/cleaningInterval.enum";
 import { calculateCurrency } from "../../../utils/calculateCurrency.utility";
 import { RoomInterface } from "../../../interfaces/Room";
 import { CustomerInterface } from "../../../interfaces/Customer";
+import { PRODUCTS } from "../../../constants/products";
 
 dayjs.extend(isBetween);
 
@@ -376,7 +377,7 @@ const BookingForm = ({ booking, room, customer }: BookingFormProps) => {
 
     const lines: InvoiceLine[] = [
       {
-        name: "Overnight stays",
+        name: PRODUCTS.RENT,
         ...calcAll({
           unitPrice: booking.priceOverride || room.price,
           quantity: invoiceNights,
@@ -387,7 +388,7 @@ const BookingForm = ({ booking, room, customer }: BookingFormProps) => {
 
     if (booking.touristTax)
       lines.push({
-        name: "Tourist tax",
+        name: PRODUCTS.TOURIST_TAX,
         ...calcAll({
           unitPrice: booking.touristTax,
           quantity: invoiceNights,
@@ -397,7 +398,7 @@ const BookingForm = ({ booking, room, customer }: BookingFormProps) => {
 
     if (booking.parkingFee)
       lines.push({
-        name: "Parking fee",
+        name: PRODUCTS.PARKING,
         ...calcAll({
           unitPrice: booking.parkingFee,
           quantity: invoiceNights,
@@ -407,7 +408,7 @@ const BookingForm = ({ booking, room, customer }: BookingFormProps) => {
 
     if (booking.cleaningFee && isLastInvoice)
       lines.push({
-        name: "Final cleaning",
+        name: PRODUCTS.CLEANING,
         ...calcAll({
           unitPrice: booking.cleaningFee,
           quantity: 1,

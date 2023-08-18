@@ -15,6 +15,8 @@ import Dashboard from "../../../layouts/Dashboard";
 import { firestore } from "../../../lib/firebase";
 import { createRef } from "../../../utils/createRef.utility";
 import { generateRoute } from "../../../utils/generateRoute.utility";
+import axios from "axios";
+import { useGlobalContext } from "../../../providers/GlobalProvider";
 
 export const Customer: NextPageWithLayout = () => {
   const router = useRouter();
@@ -45,6 +47,7 @@ interface CustomerFormProps {
 
 const CustomerForm = ({ customer }: CustomerFormProps) => {
   const router = useRouter();
+  const { session } = useGlobalContext();
   const id = router.query.id as string;
 
   const form = useForm<FormValues>({
@@ -63,6 +66,20 @@ const CustomerForm = ({ customer }: CustomerFormProps) => {
 
   const submitHandler = async (values: FormValues) => {
     if (!customer) {
+      if (session)
+        await axios.post(
+          `/api/create-customer?accessToken=${session.access_token}`,
+          {
+            name: values.name,
+            city: values.city,
+            postalCode: values.postalCode,
+            phoneNumber: values.phoneNumber,
+            email: values.email,
+            secondName: values.secondName,
+            extra: values.extra,
+          }
+        );
+
       const customerSnapshot = await addDoc(
         collection(firestore, Collection.Customers),
         values
