@@ -7,7 +7,7 @@ import { ColorScheme, MantineProvider } from "@mantine/core";
 import Head from "next/head";
 import { useDidUpdate, useLocalStorage } from "@mantine/hooks";
 import { ModalsProvider } from "@mantine/modals";
-import { GlobalProvier } from "../src/providers/GlobalProvider";
+import { GlobalProvider } from "../src/providers/GlobalProvider";
 
 export type NextPageWithLayout<P = {}, IP = P> = NextPage<P, IP> & {
   getLayout?: (page: ReactElement) => ReactNode;
@@ -53,9 +53,9 @@ export default function App({ Component, pageProps }: AppPropsWithLayout) {
       >
         <ModalsProvider>
           <Notifications position="top-right" />
-          <GlobalProvier>
+          <GlobalProvider>
             {getLayout(<Component {...pageProps} />)}
-          </GlobalProvier>
+          </GlobalProvider>
         </ModalsProvider>
       </MantineProvider>
     </>

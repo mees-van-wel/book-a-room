@@ -1,3 +1,5 @@
+import { TokenResponse } from "../../pages/api/request-token";
+
 export interface SettingsInterface {
   id: string;
   invoices?: number;
@@ -12,4 +14,5 @@ export interface SettingsInterface {
   btwNumber: string;
   bicCode: string;
   iban: string;
+  session?: TokenResponse | null;
 }

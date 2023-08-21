@@ -17,6 +17,9 @@ import Dashboard from "../../layouts/Dashboard";
 import Image from "next/image";
 import Link from "next/link";
 import { useGlobalContext } from "../../providers/GlobalProvider";
+import { doc, setDoc } from "firebase/firestore";
+import { firestore } from "../../lib/firebase";
+import TwinfieldLogo from "../../assets/images/Twinfield-logo.png";
 
 export const Settings: NextPageWithLayout = () => {
   const { session, setSession, timeoutRef } = useGlobalContext();
@@ -37,30 +40,33 @@ export const Settings: NextPageWithLayout = () => {
       <Title>Koppelingen</Title>
       <Group>
         <Card
+          withBorder
           style={{
-            background: "#25262b",
             position: "relative",
             maxWidth: 300,
           }}
         >
           <Card.Section>
             <Image
-              src="https://cdn.wolterskluwer.io/wk/fundamentals/1.x.x/logo/assets/white-medium.svg"
-              width={300}
-              height={100}
+              src={TwinfieldLogo}
+              width={250}
+              height={69}
               alt="Norway"
               style={{
+                marginTop: 20,
                 padding: "0px 32px",
                 objectFit: "contain",
               }}
             />
           </Card.Section>
           <Badge
+            radius={0}
             color={session ? "green" : "red"}
             style={{
               position: "absolute",
-              top: 8,
-              right: 8,
+              top: 0,
+              left: 0,
+              right: 0,
             }}
           >
             {session ? "Verbonden" : "Niet verbonden"}
@@ -68,9 +74,13 @@ export const Settings: NextPageWithLayout = () => {
           {session ? (
             <Button
               fullWidth
-              onClick={() => {
+              onClick={async () => {
+                if (!settings) return;
                 if (timeoutRef.current) clearTimeout(timeoutRef.current);
-                window.localStorage.removeItem("twinfield");
+                await setDoc(doc(firestore, Collection.Settings, settings.id), {
+                  ...settings,
+                  session: null,
+                });
                 setSession(false);
               }}
             >

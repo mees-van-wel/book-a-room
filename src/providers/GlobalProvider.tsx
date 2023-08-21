@@ -11,6 +11,10 @@ import {
 import { TokenResponse } from "../../pages/api/request-token";
 import axios from "axios";
 import { useRouter } from "next/router";
+import { SettingsInterface } from "../interfaces/Settings";
+import { Collection } from "../enums/collection.enum";
+import { collection, doc, getDoc, getDocs, setDoc } from "firebase/firestore";
+import { firestore } from "../lib/firebase";
 
 export const GlobalContext = createContext<{
   session: undefined | false | TokenResponse;
@@ -27,7 +31,7 @@ export const useGlobalContext = () => {
   return context;
 };
 
-export const GlobalProvier = ({ children }: { children: React.ReactNode }) => {
+export const GlobalProvider = ({ children }: { children: React.ReactNode }) => {
   const timeoutRef = useRef<NodeJS.Timeout>();
   const router = useRouter();
   const [session, setSession] = useState<TokenResponse | false>();
@@ -38,9 +42,20 @@ export const GlobalProvier = ({ children }: { children: React.ReactNode }) => {
       body
     );
 
-    if (typeof data === "string") return;
+    const response = await getDocs(collection(firestore, Collection.Settings));
+    const snapshot = response.docs[0];
+    const settings = {
+      ...snapshot.data(),
+      id: snapshot.id,
+    } as SettingsInterface;
 
-    window.localStorage.setItem("twinfield", JSON.stringify(data));
+    if (!settings || typeof data === "string") return;
+
+    await setDoc(doc(firestore, Collection.Settings, settings.id), {
+      ...settings,
+      session: data,
+    });
+
     setSession(data);
 
     if (timeoutRef.current) clearTimeout(timeoutRef.current);
@@ -50,19 +65,28 @@ export const GlobalProvier = ({ children }: { children: React.ReactNode }) => {
   };
 
   useEffect(() => {
-    const storedSession = window.localStorage.getItem("twinfield");
-    if (storedSession) {
-      const session: TokenResponse = JSON.parse(storedSession);
-      refresh({ refreshToken: session.refresh_token });
-      return;
-    }
+    (async () => {
+      const response = await getDocs(
+        collection(firestore, Collection.Settings)
+      );
+      const snapshot = response.docs[0];
+      const settings = {
+        ...snapshot.data(),
+        id: snapshot.id,
+      } as SettingsInterface;
 
-    const code = new URL(
-      `${window.location.origin}${router.asPath}`
-    ).searchParams.get("code");
+      if (settings.session) {
+        refresh({ refreshToken: settings.session.refresh_token });
+        return;
+      }
 
-    if (typeof code === "string") refresh({ code });
-    else setSession(false);
+      const code = new URL(
+        `${window.location.origin}${router.asPath}`
+      ).searchParams.get("code");
+
+      if (typeof code === "string") refresh({ code });
+      else setSession(false);
+    })();
   }, []);
 
   return (
