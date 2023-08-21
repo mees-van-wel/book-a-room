@@ -20,7 +20,7 @@ export default async function handler(
 
   if (req.body.code) {
     params.append("code", decodeURI(req.body.code));
-    params.append("redirect_uri", "http://localhost:3000/settings");
+    params.append("redirect_uri", "https://book-a-room-breda.nl/settings");
     params.append("grant_type", "authorization_code");
   }
 
