@@ -1,26 +1,17 @@
 import { NextApiResponse, NextApiRequest } from "next";
 import { soapRequest } from "../../src/utils/soap";
-import dayjs from "dayjs";
 import { OFFICE } from "../../src/constants/office";
 
-interface Line {
-  description: string;
-  value: number;
-  ledger: number;
-  vatCode: "VL" | "VH";
-  vatValue: number;
-}
-
-export interface CreateCustomerResponse {}
+export interface UpdateCustomerResponse {}
 
 export default async function handler(
   req: NextApiRequest,
-  res: NextApiResponse<CreateCustomerResponse | string>
+  res: NextApiResponse<UpdateCustomerResponse | string>
 ) {
   if (req.method !== "POST")
     return res.status(405).send("Only POST requests allowed");
 
-  const response = await soapRequest<CreateCustomerResponse>(
+  const response = await soapRequest<UpdateCustomerResponse>(
     `<dimension>
         <office>${OFFICE}</office>
         <type>DEB</type>
