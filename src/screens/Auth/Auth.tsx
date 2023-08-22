@@ -3,6 +3,7 @@ import {
   Loader,
   Paper,
   PasswordInput,
+  Stack,
   TextInput,
   Title,
 } from "@mantine/core";
@@ -51,36 +52,40 @@ export const Auth: NextPageWithLayout = () => {
   if (loading || (!loading && !!user)) return <Loader />;
 
   return (
-    <Paper p="md" shadow="md" radius="md" withBorder>
-      <Title>Inloggen</Title>
-      <form
-        onSubmit={form.onSubmit(submitHandler)}
-        style={{
-          minWidth: 250,
-        }}
-      >
-        <TextInput
-          required
-          label="E-mail"
-          type="email"
-          name="username"
-          id="username"
-          placeholder="E-mail"
-          {...form.getInputProps("email")}
-        />
-        <PasswordInput
-          required
-          label="Wachtwoord"
-          name="password"
-          id="password"
-          placeholder="Wachtwoord"
-          {...form.getInputProps("password")}
-        />
-        <Button type="submit" mt={16}>
-          Inloggen
-        </Button>
-      </form>
-    </Paper>
+    <div style={{ display: "grid", placeContent: "center", height: "100vh" }}>
+      <Paper p="md" shadow="md" radius="md" withBorder w="300px">
+        <form
+          onSubmit={form.onSubmit(submitHandler)}
+          style={{
+            width: "100%",
+          }}
+        >
+          <Stack>
+            <Title>Inloggen</Title>
+            <TextInput
+              required
+              label="E-mail"
+              type="email"
+              name="username"
+              id="username"
+              placeholder="E-mail"
+              {...form.getInputProps("email")}
+            />
+            <PasswordInput
+              required
+              label="Wachtwoord"
+              name="password"
+              id="password"
+              placeholder="Wachtwoord"
+              {...form.getInputProps("password")}
+            />
+            <Button type="submit" mt={16}>
+              Inloggen
+            </Button>
+          </Stack>
+        </form>
+      </Paper>
+    </div>
   );
 };
 
