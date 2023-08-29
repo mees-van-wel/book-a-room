@@ -146,14 +146,14 @@ const Wrapper = ({ booking }: { booking?: BookingInterface }) => {
       ? ({ id: room.id, ...room.data() } as Room)
       : booking?.room;
     const customerFinal = customer
-      ? ({ id: customer.id, ...customer.data() } as Customer)
+      ? ({ id: customer.id, ...customer.data() } as CustomerInterface)
       : booking?.customer;
 
     return (
       <BookingForm
         booking={booking}
         room={roomFinal}
-        customer={customerFinal}
+        customer={customerFinal as CustomerInterface}
       />
     );
   }
@@ -188,7 +188,7 @@ interface BookingFormProps {
 
 const BookingForm = ({ booking, room, customer }: BookingFormProps) => {
   room = room || booking?.room;
-  customer = customer || booking?.customer;
+  customer = customer || (booking?.customer as never as CustomerInterface);
 
   const router = useRouter();
   const id = router.query.id as string;
