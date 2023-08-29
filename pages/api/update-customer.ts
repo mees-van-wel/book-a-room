@@ -1,6 +1,5 @@
 import { NextApiResponse, NextApiRequest } from "next";
 import { soapRequest } from "../../src/utils/soap";
-import { OFFICE } from "../../src/constants/office";
 
 export interface UpdateCustomerResponse {}
 
@@ -13,11 +12,12 @@ export default async function handler(
 
   const response = await soapRequest<UpdateCustomerResponse>(
     `<dimension>
-        <office>${OFFICE}</office>
+        <office>${process.env.TW_OFFICE}</office>
         <type>DEB</type>
         <name>${req.body.name}</name>
         <shortname></shortname>
-	    <website></website>
+        <code>${req.body.code}</code>
+      <website></website>
         <financials>
             <matchtype>customersupplier</matchtype>
             <duedays>30</duedays>
@@ -36,7 +36,7 @@ export default async function handler(
                 <field1>${req.body.secondName}</field1>
                 <field2>${req.body.extra}</field2>
             </address>
-	    </addresses>
+      </addresses>
      </dimension>`,
     req.query.accessToken as string
   );

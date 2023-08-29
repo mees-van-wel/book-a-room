@@ -13,7 +13,7 @@ import axios from "axios";
 import { useRouter } from "next/router";
 import { SettingsInterface } from "../interfaces/Settings";
 import { Collection } from "../enums/collection.enum";
-import { collection, doc, getDoc, getDocs, setDoc } from "firebase/firestore";
+import { collection, doc, getDocs, setDoc } from "firebase/firestore";
 import { firestore } from "../lib/firebase";
 
 export const GlobalContext = createContext<{
@@ -70,6 +70,11 @@ export const GlobalProvider = ({ children }: { children: React.ReactNode }) => {
         collection(firestore, Collection.Settings)
       );
       const snapshot = response.docs[0];
+      if (!snapshot) {
+        setSession(false);
+        return;
+      }
+
       const settings = {
         ...snapshot.data(),
         id: snapshot.id,

@@ -1,7 +1,6 @@
 import { NextApiResponse, NextApiRequest } from "next";
 import { soapRequest } from "../../src/utils/soap";
 import dayjs from "dayjs";
-import { OFFICE } from "../../src/constants/office";
 
 interface Line {
   description: string;
@@ -22,6 +21,8 @@ export default async function handler(
 
   const lines = req.body.lines as Line[];
   const invoiceDate = dayjs(req.body.invoiceDate);
+  const invoiceStartDate = dayjs(req.body.invoiceStartDate);
+  const invoiceEndDate = dayjs(req.body.invoiceEndDate);
 
   const response = await soapRequest<CreateTransactionResponse>(
     `<transaction destiny="temporary" raisewarning="false">
@@ -31,7 +32,7 @@ export default async function handler(
             <date>${invoiceDate.format("YYYYMMDD")}</date>
             <period>${invoiceDate.format("YYYY/MM")}</period>
             <invoicenumber>${req.body.invoiceNumber}</invoicenumber>
-            <office>${OFFICE}</office>
+            <office>${process.env.TW_OFFICE}</office>
             <duedate>${invoiceDate.add(1, "month").format("YYYYMMDD")}</duedate>
         </header>
         <lines>
@@ -39,19 +40,15 @@ export default async function handler(
                 <dim1>130000</dim1>
                 <dim2>${req.body.customerId}</dim2>
                 <value>${req.body.total.toFixed(2)}</value>
-                <debitcredit>${
-                  req.body.credit ? "credit" : "debit"
-                }</debitcredit>
+                <debitcredit>debit</debitcredit>
                 <description />
             </line>${lines
               .map(
                 ({ ledger, value, description, vatCode, vatValue }, index) => `
             <line type="detail" id="${index + 2}">
                 <dim1>${ledger}</dim1>
-                <value>${value.toFixed(2)}</value> 
-                <debitcredit>${
-                  req.body.credit ? "debit" : "credit"
-                }</debitcredit>
+                <value>${value.toFixed(2)}</value>
+                <debitcredit>credit</debitcredit>
                 <description>${description}</description>
                 <vatcode>${vatCode}</vatcode>
                 <vatvalue>${vatValue.toFixed(2)}</vatvalue>
@@ -60,6 +57,22 @@ export default async function handler(
               .join("")}
         </lines>
     </transaction>`,
+    req.query.accessToken as string
+  );
+
+  const resp = await soapRequest<CreateTransactionResponse>(
+    `<spread action="postprovisional">
+      <original>
+        <office>${process.env.TW_OFFICE}</office>
+        <code>VRK</code>
+        <number>${response.transaction.header.number._text}</number>
+      </original>
+      <settings>
+        <dim1>179100</dim1>
+        <startperiod>${invoiceStartDate.format("YYYY/MM")}</startperiod>
+        <endperiod>${invoiceEndDate.format("YYYY/MM")}</endperiod>
+      </settings>
+    </spread>`,
     req.query.accessToken as string
   );
 

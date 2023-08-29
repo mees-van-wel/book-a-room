@@ -10,9 +10,11 @@ import { CustomerInterface } from "../../interfaces/Customer";
 import Dashboard from "../../layouts/Dashboard";
 import { generateRoute } from "../../utils/generateRoute.utility";
 import { NEW } from "../../utils/new.utility";
+import { useGlobalContext } from "../../providers/GlobalProvider";
 
 export const Customers: NextPageWithLayout = () => {
   const router = useRouter();
+  const { session } = useGlobalContext();
   const { documents: customers, loading } =
     useFirestoreDocuments<CustomerInterface>(Collection.Customers, true);
 
@@ -30,6 +32,7 @@ export const Customers: NextPageWithLayout = () => {
         <Table highlightOnHover>
           <thead>
             <tr>
+              {session && <th>Code</th>}
               <th>Naam</th>
               <th>E-mail</th>
               <th>Telefoonnummer</th>
@@ -54,6 +57,7 @@ export const Customers: NextPageWithLayout = () => {
                     cursor: "pointer",
                   }}
                 >
+                  {session && <td>{customer.twCode}</td>}
                   <td>{customer.name}</td>
                   <td>{customer.email}</td>
                   <td>{customer.phoneNumber}</td>

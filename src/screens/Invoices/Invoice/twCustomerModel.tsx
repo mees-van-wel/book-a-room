@@ -33,7 +33,7 @@ export const TwCustomerModal = ({
 
       // @ts-ignore
       const defaultValue = customerOptions.find(({ label }) =>
-        label?.includes(customerName)
+        label?.toLocaleLowerCase().includes(customerName.toLocaleLowerCase())
       )?.value;
 
       if (defaultValue) setCustomerValue(defaultValue);

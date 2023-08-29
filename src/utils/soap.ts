@@ -1,6 +1,5 @@
 import axios from "axios";
 import { js2xml, xml2js } from "xml-js";
-import { OFFICE } from "../constants/office";
 
 type SoapObject = Record<string, any>;
 
@@ -37,7 +36,7 @@ export const soapRequest = async <T extends SoapObject>(
         "soapenv:Header": {
           "twin:Header": {
             "twin:AccessToken": accessToken,
-            "twin:CompanyCode": OFFICE,
+            "twin:CompanyCode": process.env.TW_OFFICE,
           },
         },
         "soapenv:Body": {

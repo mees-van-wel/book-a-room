@@ -87,7 +87,9 @@ export const Settings: NextPageWithLayout = () => {
               Ontkoppelen
             </Button>
           ) : (
-            <Link href="https://login.twinfield.com/auth/authentication/connect/authorize?client_id=book-a-room&redirect_uri=https%3A%2F%2Fbook-a-room-breda.nl%2Fsettings&response_type=code&scope=openid+twf.organisationUser+twf.user+twf.organisation+offline_access&state=state&nonce=nonce">
+            <Link
+              href={`https://login.twinfield.com/auth/authentication/connect/authorize?client_id=book-a-room&redirect_uri=${process.env.NEXT_PUBLIC_TW_REDIRECT_URI}&response_type=code&scope=openid+twf.organisationUser+twf.user+twf.organisation+offline_access&state=state&nonce=nonce`}
+            >
               <Button fullWidth>Koppelen</Button>
             </Link>
           )}

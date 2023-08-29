@@ -1,15 +1,5 @@
 import { NextApiResponse, NextApiRequest } from "next";
 import { soapRequest } from "../../src/utils/soap";
-import dayjs from "dayjs";
-import { OFFICE } from "../../src/constants/office";
-
-interface Line {
-  description: string;
-  value: number;
-  ledger: number;
-  vatCode: "VL" | "VH";
-  vatValue: number;
-}
 
 export interface CreateCustomerResponse {}
 
@@ -22,7 +12,7 @@ export default async function handler(
 
   const response = await soapRequest<CreateCustomerResponse>(
     `<dimension>
-        <office>${OFFICE}</office>
+        <office>${process.env.TW_OFFICE}</office>
         <type>DEB</type>
         <name>${req.body.name}</name>
         <shortname></shortname>

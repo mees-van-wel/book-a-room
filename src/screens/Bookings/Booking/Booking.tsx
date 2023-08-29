@@ -869,7 +869,7 @@ const InvoiceOverview = ({
                   booking={booking}
                 />
               }
-              fileName={`Factuur ${deprecatedInvoice.number}.pdf`}
+              fileName={`Invoice ${deprecatedInvoice.number}.pdf`}
             >
               <Button>Downloaden</Button>
             </PDFDownloadLink>

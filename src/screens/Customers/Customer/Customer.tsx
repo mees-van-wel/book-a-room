@@ -65,9 +65,11 @@ const CustomerForm = ({ customer }: CustomerFormProps) => {
   });
 
   const submitHandler = async (values: FormValues) => {
+    let newId: string | null = null;
+
     if (!customer) {
-      if (session)
-        await axios.post(
+      if (session) {
+        const { data } = await axios.post(
           `/api/create-customer?accessToken=${session.access_token}`,
           {
             name: values.name,
@@ -80,15 +82,39 @@ const CustomerForm = ({ customer }: CustomerFormProps) => {
           }
         );
 
-      const customerSnapshot = await addDoc(
-        collection(firestore, Collection.Customers),
-        values
-      );
+        const twCode = data.dimension.code._text;
 
-      await router.push(
-        generateRoute(Route.Customer, { id: customerSnapshot.id })
-      );
+        const customerSnapshot = await addDoc(
+          collection(firestore, Collection.Customers),
+          { ...values, twCode }
+        );
+
+        newId = customerSnapshot.id;
+      } else {
+        const customerSnapshot = await addDoc(
+          collection(firestore, Collection.Customers),
+          values
+        );
+        newId = customerSnapshot.id;
+      }
+
+      await router.push(generateRoute(Route.Customer, { id: newId }));
     } else {
+      if (session)
+        await axios.post(
+          `/api/update-customer?accessToken=${session.access_token}`,
+          {
+            code: customer.twCode,
+            name: values.name,
+            city: values.city,
+            postalCode: values.postalCode,
+            phoneNumber: values.phoneNumber,
+            email: values.email,
+            secondName: values.secondName,
+            extra: values.extra,
+          }
+        );
+
       await setDoc(doc(firestore, Collection.Customers, id), values);
       form.resetDirty();
     }
@@ -100,6 +126,14 @@ const CustomerForm = ({ customer }: CustomerFormProps) => {
   };
 
   const deleteHandler = async () => {
+    if (session && customer?.twCode)
+      await axios.post(
+        `/api/delete-customer?accessToken=${session.access_token}`,
+        {
+          code: customer.twCode,
+        }
+      );
+
     await deleteDoc(doc(firestore, Collection.Customers, id));
 
     await router.push(Route.Customers);
@@ -140,6 +174,11 @@ const CustomerForm = ({ customer }: CustomerFormProps) => {
         label="Naam"
         placeholder="Naam"
         {...form.getInputProps("name")}
+      />
+      <TextInput
+        label="TW Code"
+        placeholder="TW Code"
+        {...form.getInputProps("twCode")}
       />
       <TextInput
         label="Tweede naam"

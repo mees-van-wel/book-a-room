@@ -212,8 +212,9 @@ const NewInvoice = ({ invoice }: NewInvoiceProps) => {
         total,
         customerId,
         invoiceDate: invoice.date.toMillis(),
+        invoiceStartDate: invoice.from.toMillis(),
+        invoiceEndDate: invoice.to.toMillis(),
         invoiceNumber: invoice.number,
-        credit: invoice.type === InvoiceType.Credit,
       }
     );
 
@@ -273,7 +274,7 @@ const NewInvoice = ({ invoice }: NewInvoiceProps) => {
               />
             }
             fileName={`${
-              invoice.type === InvoiceType.Credit ? "Creditfactuur" : "Factuur"
+              invoice.type === InvoiceType.Credit ? "Credit note" : "Invoice"
             } ${invoice.number}.pdf`}
           >
             <Button
@@ -522,8 +523,8 @@ const DeprecatedInvoice = ({ invoice }: DeprecatedInvoiceProps) => {
                 }
                 fileName={`${
                   invoice.type === InvoiceType.Credit
-                    ? "Creditfactuur"
-                    : "Factuur"
+                    ? "Credit note"
+                    : "Invoice"
                 } ${invoice.number}.pdf`}
               >
                 <Button>Download</Button>

@@ -1,5 +1,6 @@
 export interface CustomerInterface {
   id: string;
+  twCode: string;
   name: string;
   secondName: string;
   email: string;
