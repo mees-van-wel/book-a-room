@@ -65,7 +65,10 @@ export default async function handler(
       <original>
         <office>${process.env.TW_OFFICE}</office>
         <code>VRK</code>
-        <number>${response.transaction.header.number._text}</number>
+        <number>${
+          // @ts-ignore
+          response.transaction.header.number._text
+        }</number>
       </original>
       <settings>
         <dim1>179100</dim1>
