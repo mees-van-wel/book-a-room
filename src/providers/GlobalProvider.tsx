@@ -14,7 +14,8 @@ import { useRouter } from "next/router";
 import { SettingsInterface } from "../interfaces/Settings";
 import { Collection } from "../enums/collection.enum";
 import { collection, doc, getDocs, setDoc } from "firebase/firestore";
-import { firestore } from "../lib/firebase";
+import { auth, firestore } from "../lib/firebase";
+import { useAuthState } from "react-firebase-hooks/auth";
 
 export const GlobalContext = createContext<{
   session: undefined | false | TokenResponse;
@@ -32,6 +33,7 @@ export const useGlobalContext = () => {
 };
 
 export const GlobalProvider = ({ children }: { children: React.ReactNode }) => {
+  const [user, loading] = useAuthState(auth);
   const timeoutRef = useRef<NodeJS.Timeout>();
   const router = useRouter();
   const [session, setSession] = useState<TokenResponse | false>();
@@ -65,6 +67,12 @@ export const GlobalProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   useEffect(() => {
+    if (loading) return;
+    else if (!user) {
+      setSession(false);
+      return;
+    }
+
     (async () => {
       const response = await getDocs(
         collection(firestore, Collection.Settings)
@@ -92,7 +100,7 @@ export const GlobalProvider = ({ children }: { children: React.ReactNode }) => {
       if (typeof code === "string") refresh({ code });
       else setSession(false);
     })();
-  }, []);
+  }, [loading]);
 
   return (
     <GlobalContext.Provider
