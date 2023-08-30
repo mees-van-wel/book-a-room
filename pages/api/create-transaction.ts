@@ -60,8 +60,9 @@ export default async function handler(
     req.query.accessToken as string
   );
 
-  const resp = await soapRequest<CreateTransactionResponse>(
-    `<spread action="postprovisional">
+  if (invoiceStartDate.format("YYYY/MM") !== invoiceEndDate.format("YYYY/MM"))
+    await soapRequest<CreateTransactionResponse>(
+      `<spread action="postprovisional">
       <original>
         <office>${process.env.TW_OFFICE}</office>
         <code>VRK</code>
@@ -76,8 +77,8 @@ export default async function handler(
         <endperiod>${invoiceEndDate.format("YYYY/MM")}</endperiod>
       </settings>
     </spread>`,
-    req.query.accessToken as string
-  );
+      req.query.accessToken as string
+    );
 
   return res.status(200).json(response);
 }

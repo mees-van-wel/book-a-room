@@ -175,11 +175,11 @@ const CustomerForm = ({ customer }: CustomerFormProps) => {
         placeholder="Naam"
         {...form.getInputProps("name")}
       />
-      <TextInput
+      {/* <TextInput
         label="TW Code"
         placeholder="TW Code"
         {...form.getInputProps("twCode")}
-      />
+      /> */}
       <TextInput
         label="Tweede naam"
         placeholder="Tweede naam"
