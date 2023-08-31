@@ -1,14 +1,6 @@
-import {
-  Button,
-  Group,
-  Loader,
-  Modal,
-  Select,
-  Table,
-  Title,
-} from "@mantine/core";
+import { Button, Group, Loader, Modal, Table, Title } from "@mantine/core";
 import { useDidUpdate, useDisclosure } from "@mantine/hooks";
-import { modals, openConfirmModal } from "@mantine/modals";
+import { openConfirmModal } from "@mantine/modals";
 import { showNotification } from "@mantine/notifications";
 import { PDFDownloadLink } from "@react-pdf/renderer";
 import axios from "axios";
@@ -25,7 +17,7 @@ import {
 } from "firebase/firestore";
 import Link from "next/link";
 import { useRouter } from "next/router";
-import { ReactElement, useEffect, useMemo, useState } from "react";
+import { ReactElement, useMemo, useState } from "react";
 import { useDocument, useDocumentData } from "react-firebase-hooks/firestore";
 import { NextPageWithLayout } from "../../../../pages/_app";
 import { InvoiceDetails } from "../../../components/InvoiceDetails";
@@ -76,6 +68,7 @@ interface NewInvoiceProps {
 const NewInvoice = ({ invoice }: NewInvoiceProps) => {
   const router = useRouter();
   const invoiceId = router.query.id as string;
+  const [loading, setLoading] = useState(false);
   const [opened, { open, close }] = useDisclosure(false);
   const { session } = useGlobalContext();
 
@@ -178,7 +171,13 @@ const NewInvoice = ({ invoice }: NewInvoiceProps) => {
     });
   };
 
-  const mailHandler = () => {
+  const mailHandler = async () => {
+    await updateDoc(doc(firestore, Collection.Invoices, invoiceId), {
+      mailedOn: Timestamp.fromDate(new Date()),
+    });
+
+    setLoading(false);
+
     window
       ?.open(
         process.env.NEXT_PUBLIC_SMTP_BCC
@@ -187,41 +186,37 @@ const NewInvoice = ({ invoice }: NewInvoiceProps) => {
         "_blank"
       )
       ?.focus();
-
-    updateDoc(doc(firestore, Collection.Invoices, invoiceId), {
-      mailedOn: Timestamp.fromDate(new Date()),
-    });
   };
 
   const billingHandler = async (customerId: string) => {
-    if (!session) return;
-
-    await axios.post(
-      `/api/create-transaction?accessToken=${session.access_token}`,
-      {
-        lines: invoice.lines.map((line) => ({
-          description: line.name,
-          value: line.totalWithoutVat,
-          ledger:
-            line.name === PRODUCTS.CLEANING
-              ? 803010
-              : line.name === PRODUCTS.PARKING
-              ? 803000
-              : 804000,
-          vatCode: line.vatPercentage === 9 ? "VL" : "VH",
-          vatValue: line.vat,
-        })),
-        total,
-        customerId,
-        invoiceDate: invoice.date.toMillis(),
-        invoiceStartDate: invoice.from.toMillis(),
-        invoiceEndDate: invoice.to.toMillis(),
-        invoiceNumber: invoice.number,
-      }
-    );
-
     close();
-    mailHandler();
+
+    if (session)
+      await axios.post(
+        `/api/create-transaction?accessToken=${session.access_token}`,
+        {
+          lines: invoice.lines.map((line) => ({
+            description: line.name,
+            value: line.totalWithoutVat,
+            ledger:
+              line.name === PRODUCTS.CLEANING
+                ? 803010
+                : line.name === PRODUCTS.PARKING
+                ? 803000
+                : 804000,
+            vatCode: line.vatPercentage === 9 ? "VL" : "VH",
+            vatValue: line.vat,
+          })),
+          total,
+          customerId,
+          invoiceDate: invoice.date.toMillis(),
+          invoiceStartDate: invoice.from.toMillis(),
+          invoiceEndDate: invoice.to.toMillis(),
+          invoiceNumber: invoice.number,
+        }
+      );
+
+    await mailHandler();
   };
 
   const totalWithoutVat = invoice.lines.reduce(
@@ -280,10 +275,19 @@ const NewInvoice = ({ invoice }: NewInvoiceProps) => {
             } ${invoice.number}.pdf`}
           >
             <Button
+              loading={loading}
               variant={invoice.mailedOn ? "light" : undefined}
-              onClick={invoice.mailedOn ? mailHandler : open}
+              onClick={async () => {
+                setLoading(true);
+                if (invoice.mailedOn) await mailHandler();
+                else open();
+              }}
             >
-              {invoice.mailedOn ? "PDF Downloaden" : "Factureren"}
+              {invoice.mailedOn
+                ? "PDF Downloaden"
+                : invoice.type === InvoiceType.Credit
+                ? "Crediteren"
+                : "Factureren"}
             </Button>
           </PDFDownloadLink>
           {invoice.type !== InvoiceType.Credit && (
