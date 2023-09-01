@@ -236,7 +236,14 @@ const NewInvoice = ({ invoice }: NewInvoiceProps) => {
 
   return (
     <div>
-      <Modal opened={opened} onClose={close} title="Bevestig klant">
+      <Modal
+        opened={opened}
+        onClose={() => {
+          close();
+          setLoading(false);
+        }}
+        title="Bevestig klant"
+      >
         <TwCustomerModal
           customerName={invoice.customer.name.split(" - ")[0].trim()}
           onConfirm={billingHandler}

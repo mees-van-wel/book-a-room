@@ -32,9 +32,19 @@ export const TwCustomerModal = ({
         .filter(({ label, value }) => label && value);
 
       // @ts-ignore
-      const defaultValue = customerOptions.find(({ label }) =>
-        label?.toLocaleLowerCase().includes(customerName.toLocaleLowerCase())
-      )?.value;
+      const defaultValue = customerOptions.find(({ label }) => {
+        const twName = label
+          ?.toLocaleLowerCase()
+          .normalize("NFD")
+          .replace(/[\u0300-\u036f .\/-]/g, "");
+
+        const name = customerName
+          .toLocaleLowerCase()
+          .normalize("NFD")
+          .replace(/[\u0300-\u036f .\/-]/g, "");
+
+        return twName.includes(name) || name.includes(twName);
+      })?.value;
 
       if (defaultValue) setCustomerValue(defaultValue);
 
