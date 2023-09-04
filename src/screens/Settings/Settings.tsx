@@ -22,7 +22,7 @@ import { firestore } from "../../lib/firebase";
 import TwinfieldLogo from "../../assets/images/Twinfield-logo.png";
 
 export const Settings: NextPageWithLayout = () => {
-  const { session, setSession, timeoutRef } = useGlobalContext();
+  const { session, setSession, disconnect } = useGlobalContext();
 
   const { documents: settingsArray, loading } =
     useFirestoreDocuments<SettingsInterface>(Collection.Settings, true);
@@ -72,20 +72,9 @@ export const Settings: NextPageWithLayout = () => {
             {session ? "Verbonden" : "Niet verbonden"}
           </Badge>
           {session ? (
-            <Button
-              fullWidth
-              onClick={async () => {
-                if (!settings) return;
-                if (timeoutRef.current) clearTimeout(timeoutRef.current);
-                await setDoc(doc(firestore, Collection.Settings, settings.id), {
-                  ...settings,
-                  session: null,
-                });
-                setSession(false);
-              }}
-            >
+            <Button fullWidth onClick={disconnect}>
               Ontkoppelen
-            </Button>
+            </Button>   
           ) : (
             <Link
               href={`https://login.twinfield.com/auth/authentication/connect/authorize?client_id=book-a-room&redirect_uri=${process.env.NEXT_PUBLIC_TW_REDIRECT_URI}&response_type=code&scope=openid+twf.organisationUser+twf.user+twf.organisation+offline_access&state=state&nonce=nonce`}

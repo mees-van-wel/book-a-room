@@ -20,7 +20,7 @@ import { useAuthState } from "react-firebase-hooks/auth";
 export const GlobalContext = createContext<{
   session: undefined | false | TokenResponse;
   setSession: Dispatch<SetStateAction<undefined | false | TokenResponse>>;
-  timeoutRef: MutableRefObject<NodeJS.Timeout | undefined>;
+  disconnect: () => Promise<void>;
 } | null>(null);
 
 export const useGlobalContext = () => {
@@ -37,6 +37,24 @@ export const GlobalProvider = ({ children }: { children: React.ReactNode }) => {
   const timeoutRef = useRef<NodeJS.Timeout>();
   const router = useRouter();
   const [session, setSession] = useState<TokenResponse | false>();
+
+  const disconnect = async () => {
+    if (timeoutRef.current) clearTimeout(timeoutRef.current);
+
+    const response = await getDocs(collection(firestore, Collection.Settings));
+    const snapshot = response.docs[0];
+    const settings = {
+      ...snapshot.data(),
+      id: snapshot.id,
+    } as SettingsInterface;
+
+    await setDoc(doc(firestore, Collection.Settings, settings.id), {
+      ...settings,
+      session: null,
+    });
+
+    setSession(false);
+  };
 
   const refresh = async (body: { code?: string; refreshToken?: string }) => {
     const { data } = await axios.post<TokenResponse | string>(
@@ -107,7 +125,7 @@ export const GlobalProvider = ({ children }: { children: React.ReactNode }) => {
       value={{
         session,
         setSession,
-        timeoutRef,
+        disconnect,
       }}
     >
       {session === undefined ? null : children}
