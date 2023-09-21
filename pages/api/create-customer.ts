@@ -1,5 +1,6 @@
 import { NextApiResponse, NextApiRequest } from "next";
 import { soapRequest } from "../../src/utils/soap";
+import { encodeXML } from "../../src/utils/encode";
 
 export interface CreateCustomerResponse {}
 
@@ -14,7 +15,7 @@ export default async function handler(
     `<dimension>
         <office>${process.env.TW_OFFICE}</office>
         <type>DEB</type>
-        <name>${req.body.name}</name>
+        <name>${encodeXML(req.body.name)}</name>
         <shortname></shortname>
 	    <website></website>
         <financials>
@@ -25,15 +26,15 @@ export default async function handler(
         </financials>
         <addresses>
             <address id="1" type="invoice" default="true">
-                <name>${req.body.name}</name>
+                <name>${encodeXML(req.body.name)}</name>
                 <country>NL</country>
                 <city>${req.body.city}</city>
                 <postcode>${req.body.postalCode}</postcode>
                 <telephone>${req.body.phoneNumber}</telephone>
                 <telefax></telefax>
                 <email>${req.body.email}</email>
-                <field1>${req.body.secondName}</field1>
-                <field2>${req.body.extra}</field2>
+                <field1>${encodeXML(req.body.secondName)}</field1>
+                <field2>${encodeXML(req.body.extra)}</field2>
             </address>
 	    </addresses>
      </dimension>`,
