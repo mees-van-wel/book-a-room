@@ -7,7 +7,6 @@ import axios from "axios";
 import {
   addDoc,
   collection,
-  deleteDoc,
   doc,
   DocumentReference,
   getDoc,
@@ -141,33 +140,6 @@ const NewInvoice = ({ invoice }: NewInvoiceProps) => {
     showNotification({
       color: "green",
       message: "Creditfactuur gemaakt",
-    });
-  };
-
-  const deleteHandler = async () => {
-    const snapshot = await getDoc(invoice.bookingRefrence);
-    const booking = snapshot.data();
-
-    if (!!booking)
-      await updateDoc(invoice.bookingRefrence, {
-        invoicedTill: Timestamp.fromDate(
-          new Date(
-            invoice.from.toDate().setDate(invoice.from.toDate().getDate() - 1)
-          )
-        ),
-        invoices: booking.invoices.filter(
-          // @ts-ignore
-          (invoice) => invoice.id !== invoiceId
-        ),
-      });
-
-    await deleteDoc(doc(firestore, Collection.Invoices, invoiceId));
-
-    await router.replace(Route.Invoices);
-
-    showNotification({
-      color: "green",
-      message: "Verwijderd",
     });
   };
 
@@ -312,19 +284,6 @@ const NewInvoice = ({ invoice }: NewInvoiceProps) => {
             </Button>
           )}
         </>
-        <Button
-          onClick={() => {
-            openConfirmModal({
-              title: "Weet je het zeker?",
-              labels: { confirm: "Ja", cancel: "Nee" },
-              onConfirm: deleteHandler,
-            });
-          }}
-          color="red"
-          variant="light"
-        >
-          Verwijderen
-        </Button>
       </Group>
       <table width={500}>
         <tr>
@@ -471,27 +430,6 @@ const DeprecatedInvoice = ({ invoice }: DeprecatedInvoiceProps) => {
     [settingsArray]
   );
 
-  const deleteHandler = async () => {
-    if (!invoice) return;
-
-    if (!!booking)
-      await updateDoc(bookingRef, {
-        invoices: booking.invoices.filter(
-          // @ts-ignore
-          (invoice) => invoice.id !== invoiceId
-        ),
-      });
-
-    await deleteDoc(doc(firestore, Collection.Invoices, invoiceId));
-
-    await router.replace(Route.Invoices);
-
-    showNotification({
-      color: "green",
-      message: "Verwijderd",
-    });
-  };
-
   const invoiceNights = useMemo(
     () =>
       invoice?.to && invoice?.from
@@ -559,19 +497,6 @@ const DeprecatedInvoice = ({ invoice }: DeprecatedInvoiceProps) => {
             )}
           </>
         )}
-        <Button
-          onClick={() => {
-            openConfirmModal({
-              title: "Weet je het zeker?",
-              labels: { confirm: "Ja", cancel: "Nee" },
-              onConfirm: deleteHandler,
-            });
-          }}
-          color="red"
-          variant="light"
-        >
-          Verwijderen
-        </Button>
       </Group>
       <table width={500}>
         <tr>

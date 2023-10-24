@@ -1,4 +1,12 @@
-import { Group, Loader, Stack, Table, TextInput, Title } from "@mantine/core";
+import {
+  Badge,
+  Group,
+  Loader,
+  Stack,
+  Table,
+  TextInput,
+  Title,
+} from "@mantine/core";
 import { useDidUpdate } from "@mantine/hooks";
 import firebase from "firebase/compat";
 import { useRouter } from "next/router";
@@ -63,6 +71,7 @@ export const Invoices: NextPageWithLayout = () => {
                 <tr>
                   <th>Type</th>
                   <th>Nummer</th>
+                  <th>Uitgevoerd</th>
                   <th>Datum</th>
                   <th>Periode</th>
                   <th>Kamer</th>
@@ -93,15 +102,36 @@ export const Invoices: NextPageWithLayout = () => {
                       </td>
                       <td>{invoice.number}</td>
                       <td>
+                        {invoice.mailedOn ? (
+                          <Badge color="green">Ja</Badge>
+                        ) : (
+                          <Badge color="red">Nee</Badge>
+                        )}
+                      </td>
+                      <td
+                        style={{
+                          whiteSpace: "nowrap",
+                        }}
+                      >
                         {invoice.date.toDate().toLocaleDateString("nl-NL")}
                       </td>
-                      <td>
+                      <td
+                        style={{
+                          whiteSpace: "nowrap",
+                        }}
+                      >
                         Van {invoice.from.toDate().toLocaleDateString("nl-NL")}{" "}
                         tot {invoice.to.toDate().toLocaleDateString("nl-NL")}
                       </td>
                       {invoice.lines ? (
                         <>
-                          <td>{invoice.roomName}</td>
+                          <td
+                            style={{
+                              whiteSpace: "nowrap",
+                            }}
+                          >
+                            {invoice.roomName}
+                          </td>
                           <td>{invoice.customer.name}</td>
                         </>
                       ) : (

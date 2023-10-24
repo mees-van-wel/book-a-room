@@ -5,7 +5,7 @@ import { showNotification } from "@mantine/notifications";
 import { addDoc, collection, deleteDoc, doc, setDoc } from "firebase/firestore";
 import Link from "next/link";
 import { useRouter } from "next/router";
-import { ReactElement, useCallback } from "react";
+import { ReactElement } from "react";
 import { useDocumentData } from "react-firebase-hooks/firestore";
 import { NextPageWithLayout } from "../../../../pages/_app";
 import { Collection } from "../../../enums/collection.enum";
