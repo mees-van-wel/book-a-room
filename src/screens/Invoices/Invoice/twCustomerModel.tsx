@@ -46,7 +46,7 @@ export const TwCustomerModal = ({
         return twName.includes(name) || name.includes(twName);
       })?.value;
 
-      if (defaultValue) setCustomerValue(defaultValue);
+      if (defaultValue) return onConfirm(defaultValue);
 
       setCustomerOptions(customerOptions);
     })();
