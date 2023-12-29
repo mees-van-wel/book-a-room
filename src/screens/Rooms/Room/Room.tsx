@@ -109,6 +109,7 @@ const RoomForm = ({ room }: RoomFormProps) => {
       <NumberInput
         required
         min={0}
+        precision={2}
         noClampOnBlur
         decimalSeparator=","
         icon="€"
